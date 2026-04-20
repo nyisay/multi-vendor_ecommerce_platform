@@ -19,8 +19,19 @@ const userSchema = new mongoose.Schema({
     enum: ["customer", "vendor", "admin"],
     default: "customer"
   },
+  vendorStatus: {
+    type: String,
+    enum: ["none", "pending", "approved", "rejected"],
+    default: "none"
+  },
   shopName: {
     type: String // only for vendor
+  },
+  phone: {
+    type: String
+  },
+  address: {
+    type: String
   }
 }, {
   timestamps: true
