@@ -24,17 +24,24 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="fixed right-4 top-4 z-50 space-y-2">
+      <style>{`
+        @keyframes toastEnter {
+          0% { opacity: 0; transform: translateY(-14px) scale(0.96); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
+      <div className="fixed left-1/2 top-4 z-50 w-[min(92vw,520px)] -translate-x-1/2 space-y-3" role="status" aria-live="polite" aria-atomic="true">
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`min-w-64 rounded-lg px-4 py-3 text-sm text-white shadow-md ${
+            className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-white shadow-lg backdrop-blur-sm ${
               toast.type === "error"
-                ? "bg-red-600"
+                ? "border-red-300/60 bg-red-500/90"
                 : toast.type === "success"
-                  ? "bg-green-600"
-                  : "bg-gray-800"
+                  ? "border-emerald-300/60 bg-emerald-500/90"
+                  : "border-slate-300/50 bg-slate-800/90"
             }`}
+            style={{ animation: "toastEnter 220ms ease-out" }}
           >
             {toast.message}
           </div>

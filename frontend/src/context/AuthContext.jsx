@@ -52,6 +52,9 @@ export function AuthProvider({ children }) {
       shopName: profile.shopName,
       phone: profile.phone,
       address: profile.address,
+      profileImageUrl: profile.profileImageUrl,
+      profileTheme: profile.profileTheme,
+      profileCardBackgroundUrl: profile.profileCardBackgroundUrl,
     };
     localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
     setAuthState((prev) => ({ ...prev, user: nextUser, bootstrapped: true }));
@@ -72,6 +75,9 @@ export function AuthProvider({ children }) {
       shopName: profile.shopName,
       phone: profile.phone,
       address: profile.address,
+      profileImageUrl: profile.profileImageUrl,
+      profileTheme: profile.profileTheme,
+      profileCardBackgroundUrl: profile.profileCardBackgroundUrl,
     });
     return data;
   };
@@ -91,6 +97,9 @@ export function AuthProvider({ children }) {
       shopName: updated.shopName,
       phone: updated.phone,
       address: updated.address,
+      profileImageUrl: updated.profileImageUrl,
+      profileTheme: updated.profileTheme,
+      profileCardBackgroundUrl: updated.profileCardBackgroundUrl,
     };
     localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
     setAuthState((prev) => ({ ...prev, user: nextUser }));

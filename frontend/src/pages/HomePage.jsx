@@ -1,16 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
+import { PRODUCT_MENU_GROUPS } from "../data/productMegaMenu";
 import { getImageUrl, productApi } from "../services/api";
-
-const quickCategories = [
-  "Consumer Electronics",
-  "Home & Living",
-  "Apparel & Accessories",
-  "Beauty & Personal Care",
-  "Industrial Tools",
-  "Packaging & Printing",
-];
 
 export default function HomePage() {
   const { user, isAuthenticated } = useAuth();
@@ -50,14 +42,14 @@ export default function HomePage() {
       products.map((item) => item.categoryId?.name).filter(Boolean),
     );
     const categories = Array.from(categorySet);
-    return categories.length > 0 ? categories.slice(0, 6) : quickCategories;
+    return categories.length > 0 ? categories.slice(0, 8) : PRODUCT_MENU_GROUPS.map((group) => group.title).slice(0, 8);
   }, [products]);
 
   const featuredProducts = useMemo(() => {
     if (!products.length) {
       return [];
     }
-    return products.slice(0, 4);
+    return products.slice(0, 6);
   }, [products]);
 
   const trustHighlights = useMemo(() => {
@@ -68,7 +60,7 @@ export default function HomePage() {
       { label: "Active products", value: String(products.length || 0) },
       { label: "Verified suppliers", value: String(uniqueVendors || 0) },
       { label: "Categories", value: String(uniqueCategories || 0) },
-      { label: "Assignment-ready modules", value: "Customer, Vendor, Admin" },
+      { label: "Marketplace channels", value: "Customer, Vendor, Admin" },
     ];
   }, [products]);
 
@@ -81,108 +73,196 @@ export default function HomePage() {
   const popularSearches = ["headphones", "packaging", "bottle", "ring light"];
 
   return (
-    <div className="space-y-8">
-      <section className="overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-orange-50 via-white to-gray-50">
-        <div className="grid gap-6 p-8 md:grid-cols-5 md:p-10">
-          <div className="space-y-4 md:col-span-3">
-            <p className="inline-flex rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-orange-700">
-              Global B2B Sourcing
+    <div className="space-y-14">
+      <section className="relative overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-b from-white/70 to-white">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-gray-200/60 blur-3xl" />
+          <div className="absolute -right-24 top-24 h-72 w-72 rounded-full bg-gray-100 blur-3xl" />
+          <div className="absolute bottom-[-120px] left-1/2 h-96 w-[520px] -translate-x-1/2 rounded-full bg-gray-200/50 blur-3xl" />
+        </div>
+
+        <div className="relative grid gap-10 p-8 md:grid-cols-12 md:p-12">
+          <div className="space-y-6 md:col-span-7">
+            <p className="inline-flex items-center rounded-full bg-[#91ADC2] px-3 py-1 text-xs font-bold uppercase tracking-wider text-white">
+              Built for modern multi-vendor shopping
             </p>
 
-            <h1 className="text-4xl font-bold leading-tight text-gray-900 md:text-5xl">
-              Find trusted suppliers and grow your multi-vendor business
+            <h1 className="text-4xl font-black leading-[1.05] tracking-tight text-gray-950 sm:text-5xl md:text-6xl">
+              Shop the drops.
+              <br />
+              Discover new vendors.
             </h1>
 
-            <p className="max-w-2xl text-gray-600">
-              Source quality products, compare suppliers, and manage orders in one platform. Built for assignment demo with
-              real customer, vendor, and admin flows.
+            <p className="max-w-xl text-base text-gray-600 sm:text-lg">
+              Discover products from trusted sellers, compare options, and complete checkout in a smooth shopping flow.
             </p>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link
                 to="/products"
-                className="rounded-lg bg-orange-500 px-5 py-3 text-center font-semibold text-white transition hover:-translate-y-0.5 hover:bg-orange-600"
+                className="rounded-full bg-[#91ADC2] px-6 py-3 text-center text-sm font-semibold text-white transition hover:bg-[#9BA0BC]"
               >
-                Start Sourcing
+                Shop now
               </Link>
-              {!isAuthenticated && (
-                <Link
-                  to="/register"
-                  className="rounded-lg border border-gray-300 bg-white px-5 py-3 text-center font-semibold text-gray-800 transition hover:-translate-y-0.5 hover:shadow-sm"
-                >
-                  Become a Supplier
-                </Link>
-              )}
-              {isAuthenticated && (
+              {isAuthenticated ? (
                 <Link
                   to="/dashboard"
-                  className="rounded-lg border border-gray-300 bg-white px-5 py-3 text-center font-semibold text-gray-800 transition hover:-translate-y-0.5 hover:shadow-sm"
+                  className="rounded-full border border-gray-300 bg-white px-6 py-3 text-center text-sm font-semibold text-gray-900 transition hover:bg-gray-50"
                 >
-                  Go to Dashboard
+                  Go to dashboard
+                </Link>
+              ) : (
+                <Link
+                  to="/register"
+                  className="rounded-full border border-gray-300 bg-white px-6 py-3 text-center text-sm font-semibold text-gray-900 transition hover:bg-gray-50"
+                >
+                  Become a vendor
                 </Link>
               )}
             </div>
+
+            <form onSubmit={onSearchSubmit} className="mt-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <div className="flex-1 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    placeholder="Search products, brands, categories…"
+                    className="w-full border-0 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="rounded-2xl bg-[#9BA0BC] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#7A8B99]"
+                >
+                  Search
+                </button>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold text-gray-500">Popular:</span>
+                {popularSearches.map((term) => (
+                  <button
+                    key={term}
+                    type="button"
+                    onClick={() => navigate(`/products?q=${encodeURIComponent(term)}`)}
+                    className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-gray-800 shadow-sm ring-1 ring-gray-200 transition hover:bg-gray-50"
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
+            </form>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 md:col-span-2">
-            <h2 className="text-lg font-semibold text-gray-900">Quick Product Search</h2>
-            <p className="mt-1 text-sm text-gray-600">Search and jump directly to filtered product results.</p>
-            <form onSubmit={onSearchSubmit} className="mt-4 space-y-3">
-              <div className="rounded-lg border border-gray-300 p-2">
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="What are you looking for?"
-                  className="w-full border-0 px-2 py-2 text-sm text-gray-700 outline-none"
-                />
+          <div className="md:col-span-5">
+            <div className="grid gap-3 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+              <div className="flex items-baseline justify-between">
+                <h2 className="text-sm font-extrabold uppercase tracking-wider text-gray-900">Today’s highlights</h2>
+                <Link to="/products" className="text-xs font-semibold text-gray-600 hover:text-gray-900">
+                  Browse all
+                </Link>
               </div>
-              <button
-                type="submit"
-                className="w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-black"
-              >
-                Search Products
-              </button>
-            </form>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {popularSearches.map((term) => (
-                <button
-                  key={term}
-                  type="button"
-                  onClick={() => navigate(`/products?q=${encodeURIComponent(term)}`)}
-                  className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-200"
-                >
-                  {term}
-                </button>
-              ))}
+              <div className="grid gap-3 sm:grid-cols-2">
+                {trustHighlights.map((item) => (
+                  <article key={item.label} className="rounded-2xl bg-gray-50 p-4 ring-1 ring-gray-100">
+                    <p className="text-2xl font-black text-gray-950">{item.value}</p>
+                    <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-gray-500">{item.label}</p>
+                  </article>
+                ))}
+              </div>
+              <div className="rounded-2xl bg-[#9BA0BC] p-4 text-white">
+                <p className="text-sm font-bold">Fast checkout. Real roles.</p>
+                <p className="mt-1 text-xs text-white/80">Built for shoppers, sellers, and store administrators.</p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {trustHighlights.map((item) => (
-          <article
-            key={item.label}
-            className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md"
-          >
-            <p className="text-2xl font-bold text-gray-900">{item.value}</p>
-            <p className="mt-1 text-sm text-gray-600">{item.label}</p>
-          </article>
-        ))}
+      <section className="space-y-6">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-2xl font-black tracking-tight text-gray-950 sm:text-3xl">Featured picks</h2>
+            <p className="mt-1 text-sm text-gray-600">Fresh picks from active sellers in the marketplace.</p>
+          </div>
+          <Link to="/products" className="text-sm font-semibold text-gray-800 hover:text-[#7A8B99]">
+            View all products
+          </Link>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {featuredProducts.map((item) => (
+            <article
+              key={item._id}
+              className="group overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <div className="relative">
+                {item.imageUrl ? (
+                  <img
+                    src={getImageUrl(item.imageUrl)}
+                    alt={item.name}
+                    className="h-56 w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                  />
+                ) : (
+                  <div className="h-56 w-full bg-gradient-to-br from-gray-100 to-gray-200" />
+                )}
+                <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-white">{item.vendorId?.name || "Vendor"}</p>
+                    <p className="truncate text-lg font-black tracking-tight text-white">{item.name}</p>
+                  </div>
+                  <p className="shrink-0 rounded-full bg-white/90 px-3 py-1.5 text-sm font-extrabold text-gray-950">
+                    ${item.price}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2 p-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  {item.categoryId?.name || "Uncategorized"}
+                </p>
+                <p className="line-clamp-2 text-sm text-gray-600">{item.description || "No description available."}</p>
+                <div className="flex items-center justify-between pt-2 text-xs font-semibold text-gray-600">
+                  <span>Stock: {item.stock}</span>
+                  <Link to={`/products/${item._id}`} className="text-gray-900 hover:underline">
+                    View details
+                  </Link>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        {isLoadingProducts && <p className="text-sm text-gray-500">Loading featured products...</p>}
+        {!isLoadingProducts && featuredProducts.length === 0 && (
+          <div className="rounded-3xl border border-gray-200 bg-white p-6 text-sm text-gray-600 shadow-sm">
+            No products available yet. Add products from the vendor panel to populate this section.
+          </div>
+        )}
       </section>
 
-      <section className="grid gap-5 rounded-2xl border border-gray-200 bg-white p-6 md:grid-cols-3">
-        <div className="md:col-span-1">
-          <h2 className="text-2xl font-bold text-gray-900">Top Categories</h2>
-          <p className="mt-1 text-sm text-gray-600">Inspired by large B2B marketplaces, optimized for your assignment scope.</p>
+      <section className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-2xl font-black tracking-tight text-gray-950">Top categories right now</h2>
+            <p className="mt-1 text-sm text-gray-600">
+              Categories are based on active inventory to help shoppers find products faster.
+            </p>
+          </div>
+          <Link to="/products" className="rounded-full bg-[#91ADC2] px-6 py-3 text-center text-sm font-semibold text-white transition hover:bg-[#9BA0BC]">
+            Browse products
+          </Link>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 md:col-span-2">
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {derivedCategories.map((category) => (
             <Link
               key={category}
               to={`/products?q=${encodeURIComponent(category)}`}
-              className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-800 transition hover:-translate-y-0.5 hover:bg-gray-100"
+              className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-100"
             >
               {category}
             </Link>
@@ -190,76 +270,24 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="space-y-4">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Featured Wholesale Products</h2>
-            <p className="text-sm text-gray-600">Live data from your current products API.</p>
+      <section className="rounded-3xl bg-[#7A8B99] p-8 text-white">
+        <div className="grid gap-6 md:grid-cols-3">
+          <div className="md:col-span-2">
+            <p className="text-xs font-bold uppercase tracking-widest text-white/90">Built for growth</p>
+            <h2 className="mt-3 text-3xl font-black tracking-tight">One platform for shopping, selling, and operations</h2>
+            <p className="mt-2 text-sm text-white/80">
+              Deliver a polished storefront with reliable catalog, order, and account workflows.
+            </p>
           </div>
-          <Link to="/products" className="text-sm font-semibold text-orange-600 hover:text-orange-700">
-            View all products
-          </Link>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {featuredProducts.map((item) => (
-            <article
-              key={item._id}
-              className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md"
+          <div className="flex items-center md:justify-end">
+            <Link
+              to={isAuthenticated ? "/products" : "/register"}
+              className="w-full rounded-full bg-white px-6 py-3 text-center text-sm font-semibold text-gray-900 transition hover:bg-gray-100 md:w-auto"
             >
-              {item.imageUrl ? (
-                <img
-                  src={getImageUrl(item.imageUrl)}
-                  alt={item.name}
-                  className="mb-4 h-28 w-full rounded-lg object-cover"
-                />
-              ) : (
-                <div className="mb-4 h-28 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200" />
-              )}
-              <h3 className="font-semibold text-gray-900">{item.name}</h3>
-              <p className="mt-1 text-sm text-gray-600">${item.price}</p>
-              <p className="text-xs text-gray-500">Stock: {item.stock}</p>
-              <p className="mt-3 text-xs font-medium text-gray-700">{item.vendorId?.name || "Supplier"}</p>
-            </article>
-          ))}
-        </div>
-        {isLoadingProducts && <p className="text-sm text-gray-500">Loading featured products...</p>}
-        {!isLoadingProducts && featuredProducts.length === 0 && (
-          <p className="rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-600">
-            No products available yet. Add products from the vendor panel to populate this section.
-          </p>
-        )}
-      </section>
-
-      <section className="grid gap-4 rounded-2xl bg-gray-900 p-7 text-white md:grid-cols-3">
-        <div className="md:col-span-2">
-          <h2 className="text-2xl font-bold">Post your sourcing request and get supplier quotes</h2>
-          <p className="mt-2 text-sm text-gray-300">
-            Add this as your assignment wow-factor feature. You can later connect it to a real RFQ endpoint.
-          </p>
-        </div>
-        <div className="flex items-center md:justify-end">
-          <Link to="/register" className="w-full rounded-lg bg-orange-500 px-4 py-3 text-center font-semibold text-white hover:bg-orange-600 md:w-auto">
-            Post Request
-          </Link>
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-gray-200 bg-white p-6">
-        {isAuthenticated ? (
-          <p className="text-sm text-gray-700">
-            Logged in as <span className="font-semibold uppercase">{user.role}</span>. Use the top navigation for your role workflow.
-          </p>
-        ) : (
-          <div className="flex flex-wrap gap-3">
-            <Link to="/login" className="rounded bg-gray-900 px-4 py-2 font-semibold text-white">
-              Login
-            </Link>
-            <Link to="/register" className="rounded border border-gray-300 px-4 py-2 font-semibold text-gray-700">
-              Register
+              {isAuthenticated ? "Start shopping" : "Create an account"}
             </Link>
           </div>
-        )}
+        </div>
       </section>
     </div>
   );

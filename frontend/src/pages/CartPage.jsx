@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { cartApi, orderApi } from "../services/api";
-import { useToast } from "../context/useToast";
+import { cartApi } from "../services/api";
+import Button from "../components/ui/Button";
+import Badge from "../components/ui/Badge";
+import { Card, CardBody } from "../components/ui/Card";
+import { SectionHeading } from "../components/ui/Section";
 
 export default function CartPage() {
-  const { showToast } = useToast();
   const navigate = useNavigate();
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -58,107 +60,145 @@ export default function CartPage() {
     }, 0);
   }, [cart]);
 
-  const placeOrder = async () => {
-    setError("");
-    try {
-      await orderApi.create();
-      showToast("Order placed successfully", "success");
-      await loadCart();
-    } catch (err) {
-      setError(err.message || "Failed to place order");
-    }
-  };
-
   const updateQty = async (productId, nextQty) => {
     try {
       await cartApi.updateQuantity(productId, nextQty);
       await loadCart();
     } catch (err) {
-      showToast(err.message, "error");
+      setError(err.message || "Failed to update quantity");
     }
   };
 
   const removeItem = async (productId) => {
     try {
       await cartApi.remove(productId);
-      showToast("Item removed", "success");
       await loadCart();
     } catch (err) {
-      showToast(err.message, "error");
+      setError(err.message || "Failed to remove item");
     }
   };
 
   return (
-    <section className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">My Cart</h1>
-        <p className="text-sm text-gray-600">Data from `/api/cart`.</p>
-      </div>
+    <section className="space-y-6">
+      <SectionHeading
+        title="Cart"
+        description="Review items before checkout."
+        right={
+          <Link to="/products" className="text-sm font-semibold text-gray-800 hover:text-[#7A8B99]">
+            Continue shopping
+          </Link>
+        }
+      />
 
-      {loading && <p className="text-gray-600">Loading cart...</p>}
-      {error && <p className="rounded bg-red-100 px-3 py-2 text-sm text-red-700">{error}</p>}
-      <div className="space-y-3">
-        {cart?.items?.map((item) => (
-          <article key={item._id} className="rounded-xl bg-white p-4 shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h2 className="font-semibold text-gray-900">{item.productId?.name || "Item"}</h2>
-                <p className="text-sm text-gray-600">Unit: ${item.productId?.price || 0}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => updateQty(item.productId?._id, Math.max(1, item.quantity - 1))}
-                  className="rounded border border-gray-300 px-2"
-                >
-                  -
-                </button>
-                <span className="text-sm">{item.quantity}</span>
-                <button
-                  type="button"
-                  onClick={() => updateQty(item.productId?._id, item.quantity + 1)}
-                  className="rounded border border-gray-300 px-2"
-                >
-                  +
-                </button>
-                <button
-                  type="button"
-                  onClick={() => removeItem(item.productId?._id)}
-                  className="rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white"
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
+      {loading && <p className="text-sm font-semibold text-gray-600">Loading cart...</p>}
+      {error && <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
 
-      {!loading && (!cart?.items || cart.items.length === 0) && (
-        <p className="rounded bg-white p-4 text-sm text-gray-600 shadow-sm">Your cart is empty.</p>
-      )}
+      <div className="grid gap-6 lg:grid-cols-12">
+        <div className="space-y-4 lg:col-span-8">
+          {(cart?.items || []).map((item) => {
+            const unitPrice = Number(item.productId?.price || 0);
+            const lineTotal = unitPrice * item.quantity;
+            return (
+              <Card key={item._id}>
+                <CardBody className="space-y-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <p className="truncate text-lg font-black tracking-tight text-gray-950">
+                        {item.productId?.name || "Item"}
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-gray-600">
+                        Unit price <span className="text-gray-900">${unitPrice.toFixed(2)}</span>
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="neutral">Qty {item.quantity}</Badge>
+                      <Badge variant="dark">${lineTotal.toFixed(2)}</Badge>
+                    </div>
+                  </div>
 
-      <div className="rounded-xl bg-white p-4 shadow-sm">
-        <p className="font-semibold text-gray-900">Estimated total: ${estimatedTotal.toFixed(2)}</p>
-        <button
-          type="button"
-          onClick={placeOrder}
-          disabled={!cart?.items || cart.items.length === 0}
-          className="mt-3 rounded bg-gray-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-        >
-          Place Order
-        </button>
-        <button
-          type="button"
-          onClick={() => navigate("/checkout")}
-          disabled={!cart?.items || cart.items.length === 0}
-          className="ml-2 mt-3 rounded border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-800 disabled:opacity-50"
-        >
-          Go to Checkout
-        </button>
-        <Link to="/products" className="ml-2 text-sm text-gray-600 underline">
-          Continue shopping
-        </Link>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white p-2 shadow-sm">
+                      <button
+                        type="button"
+                        aria-label="Decrease quantity"
+                        onClick={() => updateQty(item.productId?._id, Math.max(1, item.quantity - 1))}
+                        className="h-9 w-9 rounded-xl border border-gray-200 bg-white text-sm font-black text-gray-900 transition hover:bg-gray-50"
+                      >
+                        −
+                      </button>
+                      <span className="min-w-10 text-center text-sm font-extrabold text-gray-950">{item.quantity}</span>
+                      <button
+                        type="button"
+                        aria-label="Increase quantity"
+                        onClick={() => updateQty(item.productId?._id, item.quantity + 1)}
+                        className="h-9 w-9 rounded-xl border border-gray-200 bg-white text-sm font-black text-gray-900 transition hover:bg-gray-50"
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    <Button variant="danger" size="sm" onClick={() => removeItem(item.productId?._id)}>
+                      Remove
+                    </Button>
+                  </div>
+                </CardBody>
+              </Card>
+            );
+          })}
+
+          {!loading && (!cart?.items || cart.items.length === 0) && (
+            <Card>
+              <CardBody className="text-center">
+                <p className="text-sm font-semibold text-gray-700">Your cart is empty.</p>
+                <p className="mt-1 text-sm text-gray-600">Browse products and add items to get started.</p>
+                <div className="mt-5">
+                  <Link to="/products">
+                    <Button>Shop products</Button>
+                  </Link>
+                </div>
+              </CardBody>
+            </Card>
+          )}
+        </div>
+
+        <div className="lg:col-span-4">
+          <div className="sticky top-24 space-y-4">
+            <Card>
+              <CardBody className="space-y-4">
+                <p className="text-xs font-extrabold uppercase tracking-widest text-gray-500">Order summary</p>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-semibold text-gray-700">Estimated total</span>
+                  <span className="text-lg font-black text-gray-950">${estimatedTotal.toFixed(2)}</span>
+                </div>
+
+                <div className="grid gap-2">
+                  <Button
+                    onClick={() => navigate("/checkout")}
+                    disabled={!cart?.items || cart.items.length === 0}
+                    fullWidth
+                  >
+                    Proceed to checkout
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => navigate("/checkout")}
+                    disabled={!cart?.items || cart.items.length === 0}
+                    fullWidth
+                  >
+                    Go to checkout
+                  </Button>
+                </div>
+
+                <div className="rounded-2xl bg-gray-50 p-4 ring-1 ring-gray-100">
+                  <p className="text-xs font-extrabold uppercase tracking-widest text-gray-500">Notes</p>
+                  <p className="mt-2 text-sm text-gray-700">
+                    Order totals and item availability are updated in real time from current catalog data.
+                  </p>
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+        </div>
       </div>
     </section>
   );

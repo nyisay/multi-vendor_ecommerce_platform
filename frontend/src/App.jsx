@@ -8,6 +8,8 @@ import AdminProductsPage from "./pages/AdminProductsPage";
 import AdminCategoriesPage from "./pages/AdminCategoriesPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminVendorsPage from "./pages/AdminVendorsPage";
+import AboutPage from "./pages/AboutPage";
+import AccessibilityPage from "./pages/AccessibilityPage";
 import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import HomePage from "./pages/HomePage";
@@ -17,7 +19,9 @@ import OrdersPage from "./pages/OrdersPage";
 import ProfilePage from "./pages/ProfilePage";
 import ProductDetailsPage from "./pages/ProductDetailsPage";
 import ProductsPage from "./pages/ProductsPage";
+import PrivacyPage from "./pages/PrivacyPage";
 import RegisterPage from "./pages/RegisterPage";
+import TermsPage from "./pages/TermsPage";
 import VendorDashboardPage from "./pages/VendorDashboardPage";
 import VendorOrdersPage from "./pages/VendorOrdersPage";
 import VendorProductsPage from "./pages/VendorProductsPage";
@@ -49,6 +53,10 @@ function App() {
         <Route path="register" element={<RegisterPage />} />
         <Route path="products" element={<ProductsPage />} />
         <Route path="products/:id" element={<ProductDetailsPage />} />
+        <Route path="about" element={<AboutPage />} />
+        <Route path="terms" element={<TermsPage />} />
+        <Route path="privacy" element={<PrivacyPage />} />
+        <Route path="accessibility" element={<AccessibilityPage />} />
         <Route
           path="profile"
           element={

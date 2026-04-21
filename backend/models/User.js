@@ -8,7 +8,9 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    lowercase: true,
+    trim: true
   },
   password: {
     type: String,
@@ -32,9 +34,22 @@ const userSchema = new mongoose.Schema({
   },
   address: {
     type: String
+  },
+  profileImageUrl: {
+    type: String
+  },
+  profileTheme: {
+    type: String,
+    enum: ["ocean", "sunset", "midnight", "forest", "custom"],
+    default: "ocean"
+  },
+  profileCardBackgroundUrl: {
+    type: String
   }
 }, {
   timestamps: true
 });
+
+userSchema.index({ role: 1, vendorStatus: 1, createdAt: -1 });
 
 module.exports = mongoose.model("User", userSchema);

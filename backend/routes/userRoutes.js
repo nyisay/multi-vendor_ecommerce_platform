@@ -11,16 +11,26 @@ const {
   updateVendorStatus
 } = require("../controllers/userController");
 const { protect, authorizeRoles } = require("../middleware/authMiddleware");
+const { requireObjectIdParam, validateRegister, validateLogin } = require("../middleware/validationMiddleware");
+const { uploadProfileAssets } = require("../middleware/uploadMiddleware");
 
-router.post("/register", registerUser);
-router.post("/login", loginUser);
+router.post("/register", validateRegister, registerUser);
+router.post("/login", validateLogin, loginUser);
 router.get("/profile", protect, getMyProfile);
-router.put("/profile", protect, updateMyProfile);
+router.put(
+  "/profile",
+  protect,
+  uploadProfileAssets.fields([
+    { name: "profileImage", maxCount: 1 },
+    { name: "profileCardBackground", maxCount: 1 },
+  ]),
+  updateMyProfile,
+);
 
 // Admin management
 router.get("/", protect, authorizeRoles("admin"), getAllUsers);
 router.get("/vendors", protect, authorizeRoles("admin"), getVendors);
-router.put("/vendors/:id/status", protect, authorizeRoles("admin"), updateVendorStatus);
+router.put("/vendors/:id/status", protect, authorizeRoles("admin"), requireObjectIdParam("id"), updateVendorStatus);
 
 
 module.exports = router;

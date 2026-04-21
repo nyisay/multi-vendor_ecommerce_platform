@@ -4,6 +4,9 @@ import { useAuth } from "../context/useAuth";
 import SkeletonCard from "../components/SkeletonCard";
 import { categoryApi, cartApi, getImageUrl, productApi } from "../services/api";
 import { useToast } from "../context/useToast";
+import Button from "../components/ui/Button";
+import Select from "../components/ui/Select";
+import Input from "../components/ui/Input";
 
 export default function ProductsPage() {
   const { user } = useAuth();
@@ -18,6 +21,21 @@ export default function ProductsPage() {
   const [pagination, setPagination] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [searchInput, setSearchInput] = useState(query);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    setSearchInput(query);
+  }, [query]);
+
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      if (searchInput !== query) {
+        updateFilters({ q: searchInput });
+      }
+    }, 350);
+    return () => clearTimeout(timerId);
+  }, [searchInput, query]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -41,7 +59,7 @@ export default function ProductsPage() {
     };
 
     fetchProducts();
-  }, [query, selectedCategory, sortBy, page]);
+  }, [query, selectedCategory, sortBy, page, reloadKey]);
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -55,7 +73,7 @@ export default function ProductsPage() {
     loadCategories();
   }, []);
 
-  const updateFilters = (next) => {
+  function updateFilters(next) {
     const nextParams = new URLSearchParams(searchParams);
     Object.entries(next).forEach(([key, value]) => {
       if (!value) nextParams.delete(key);
@@ -65,7 +83,7 @@ export default function ProductsPage() {
       nextParams.set("page", "1");
     }
     setSearchParams(nextParams);
-  };
+  }
 
   const goToPage = (nextPage) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -83,105 +101,163 @@ export default function ProductsPage() {
   };
 
   return (
-    <section className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-        <p className="text-sm text-gray-600">Public storefront listing from `/api/products`.</p>
-      </div>
-
-      <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-        <div className="grid gap-2 md:grid-cols-4">
-          <input
-            type="text"
-            value={query}
-            onChange={(event) => {
-              updateFilters({ q: event.target.value });
-            }}
-            placeholder="Search by product, category, supplier..."
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm text-gray-700 md:col-span-2"
-          />
-          <select
-            value={selectedCategory}
-            onChange={(event) => updateFilters({ category: event.target.value })}
-            className="rounded border border-gray-300 px-3 py-2 text-sm text-gray-700"
-          >
-            <option value="">All categories</option>
-            {categories.map((category) => (
-              <option key={category._id} value={category._id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={sortBy}
-            onChange={(event) => updateFilters({ sortBy: event.target.value })}
-            className="rounded border border-gray-300 px-3 py-2 text-sm text-gray-700"
-          >
-            <option value="newest">Newest</option>
-            <option value="price_asc">Price: Low to High</option>
-            <option value="price_desc">Price: High to Low</option>
-          </select>
+    <section className="space-y-6">
+      <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-black tracking-tight text-gray-950 sm:text-4xl">Shop</h1>
+          <p className="mt-1 text-sm text-gray-600">Browse products from your marketplace vendors.</p>
         </div>
+        <Link to="/" className="text-sm font-semibold text-gray-800 hover:text-[#7A8B99]">
+          Back to home
+        </Link>
+      </header>
+
+      <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="grid gap-3 md:grid-cols-12 md:items-center">
+          <div className="md:col-span-6">
+            <Input
+              type="text"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="Search products, categories, vendors…"
+              className="bg-gray-50"
+            />
+          </div>
+
+          <div className="md:col-span-3">
+            <Select
+              value={selectedCategory}
+              onChange={(event) => updateFilters({ category: event.target.value })}
+            >
+              <option value="">All categories</option>
+              {categories.map((category) => (
+                <option key={category._id} value={category._id}>
+                  {category.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+
+          <div className="md:col-span-3">
+            <Select
+              value={sortBy}
+              onChange={(event) => updateFilters({ sortBy: event.target.value })}
+            >
+              <option value="newest">Newest</option>
+              <option value="price_asc">Price: Low to High</option>
+              <option value="price_desc">Price: High to Low</option>
+            </Select>
+          </div>
+        </div>
+
+        {(query || selectedCategory) && (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs font-semibold text-gray-500">
+              Filters active
+              {query ? ` · “${query}”` : ""}
+            </p>
+            <button
+              type="button"
+              onClick={() => setSearchParams(new URLSearchParams())}
+              className="rounded-full bg-gray-100 px-4 py-2 text-xs font-semibold text-gray-800 transition hover:bg-gray-200"
+            >
+              Clear filters
+            </button>
+          </div>
+        )}
       </div>
 
-      {error && <p className="rounded bg-red-100 px-3 py-2 text-sm text-red-700">{error}</p>}
+      {error && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+          <p>{error}</p>
+          <button
+            type="button"
+            onClick={() => setReloadKey((prev) => prev + 1)}
+            className="mt-2 underline"
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
       {loading && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, idx) => (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 9 }).map((_, idx) => (
             <SkeletonCard key={idx} />
           ))}
         </div>
       )}
 
-      {!loading && <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {products.map((product) => (
-          <article
-            key={product._id}
-            className="space-y-3 rounded-xl bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md"
-          >
-            {product.imageUrl ? (
-              <img
-                src={getImageUrl(product.imageUrl)}
-                alt={product.name}
-                className="h-40 w-full rounded object-cover"
-              />
-            ) : (
-              <div className="h-40 w-full rounded bg-gradient-to-br from-gray-100 to-gray-200" />
-            )}
-            <div>
-              <Link to={`/products/${product._id}`} className="text-lg font-semibold text-gray-900 hover:underline">
-                {product.name}
-              </Link>
-              <p className="text-sm text-gray-500">{product.description || "No description"}</p>
-            </div>
+      {!loading && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {products.map((product) => (
+            <article
+              key={product._id}
+              className="group overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <div className="relative">
+                {product.imageUrl ? (
+                  <img
+                    src={getImageUrl(product.imageUrl)}
+                    alt={product.name}
+                    className="h-64 w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                  />
+                ) : (
+                  <div className="h-64 w-full bg-gradient-to-br from-gray-100 to-gray-200" />
+                )}
+                <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/55 to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4">
+                  <p className="truncate text-xs font-bold uppercase tracking-widest text-gray-200">
+                    {product.categoryId?.name || "Uncategorized"}
+                  </p>
+                  <Link
+                    to={`/products/${product._id}`}
+                    className="mt-1 line-clamp-2 text-lg font-black tracking-tight text-white hover:underline"
+                  >
+                    {product.name}
+                  </Link>
+                </div>
+              </div>
 
-            <div className="text-sm text-gray-700">
-              <p>Price: ${product.price}</p>
-              <p>Stock: {product.stock}</p>
-              <p>Vendor: {product.vendorId?.name || "Unknown"}</p>
-              <p>Category: {product.categoryId?.name || "Uncategorized"}</p>
-            </div>
+              <div className="space-y-3 p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-lg font-black text-gray-950">${product.price}</p>
+                  <p className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                    Stock: {product.stock}
+                  </p>
+                </div>
 
-            {user?.role === "customer" && (
-              <button
-                type="button"
-                onClick={() => addToCart(product._id)}
-                className="w-full rounded bg-gray-900 px-3 py-2 text-sm font-semibold text-white"
-              >
-                Add to Cart
-              </button>
-            )}
-          </article>
-        ))}
-      </div>}
+                <p className="line-clamp-2 text-sm text-gray-600">
+                  {product.description || "No description provided."}
+                </p>
+
+                <div className="flex items-center justify-between gap-3 text-xs font-semibold text-gray-600">
+                  <span className="truncate">By {product.vendorId?.name || "Unknown vendor"}</span>
+                  <Link to={`/products/${product._id}`} className="text-gray-900 hover:underline">
+                    Details
+                  </Link>
+                </div>
+
+                {user?.role === "customer" && (
+                  <Button onClick={() => addToCart(product._id)} fullWidth>
+                    Add to cart
+                  </Button>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
 
       {!loading && products.length === 0 && (
-        <p className="rounded bg-white p-4 text-sm text-gray-600 shadow-sm">No products match this search.</p>
+        <div className="rounded-3xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-600 shadow-sm">
+          No products match this search.
+        </div>
       )}
 
       {pagination && (
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs text-gray-500">
+        <div className="flex flex-col gap-3 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs font-semibold text-gray-500">
             Showing {products.length} of {pagination.total} products
           </p>
           <div className="flex items-center gap-2">
@@ -189,18 +265,18 @@ export default function ProductsPage() {
               type="button"
               onClick={() => goToPage(Math.max(1, page - 1))}
               disabled={page <= 1}
-              className="rounded border border-gray-300 px-3 py-1 text-sm disabled:opacity-50"
+              className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
             >
               Previous
             </button>
-            <span className="text-sm text-gray-700">
+            <span className="text-sm font-semibold text-gray-700">
               Page {pagination.page} of {pagination.totalPages || 1}
             </span>
             <button
               type="button"
               onClick={() => goToPage(Math.min(pagination.totalPages || page, page + 1))}
               disabled={page >= (pagination.totalPages || 1)}
-              className="rounded border border-gray-300 px-3 py-1 text-sm disabled:opacity-50"
+              className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
             >
               Next
             </button>

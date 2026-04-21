@@ -1,6 +1,9 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
+import Button from "../components/ui/Button";
+import Input from "../components/ui/Input";
+import { Card, CardBody } from "../components/ui/Card";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -32,38 +35,63 @@ export default function LoginPage() {
   };
 
   return (
-    <section className="mx-auto max-w-md rounded-xl bg-white p-6 shadow-sm">
-      <h1 className="mb-4 text-2xl font-bold text-gray-900">Login</h1>
-      <form className="space-y-3" onSubmit={onSubmit}>
-        <input
-          name="email"
-          type="email"
-          placeholder="Email"
-          value={form.email}
-          onChange={onChange}
-          required
-          className="w-full rounded border border-gray-300 px-3 py-2"
-        />
-        <input
-          name="password"
-          type="password"
-          placeholder="Password"
-          value={form.password}
-          onChange={onChange}
-          required
-          className="w-full rounded border border-gray-300 px-3 py-2"
-        />
+    <section className="mx-auto max-w-md">
+      <div className="mb-6 text-center">
+        <p className="text-xs font-extrabold uppercase tracking-widest text-gray-500">Welcome back</p>
+        <h1 className="mt-2 text-3xl font-black tracking-tight text-gray-950">Sign in</h1>
+        <p className="mt-1 text-sm text-gray-600">Access your account and continue shopping.</p>
+      </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+      <Card>
+        <CardBody>
+          <form className="space-y-4" onSubmit={onSubmit}>
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-widest text-gray-500" htmlFor="email">
+                Email
+              </label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="you@example.com"
+                value={form.email}
+                onChange={onChange}
+                required
+                autoComplete="email"
+              />
+            </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded bg-gray-900 px-3 py-2 font-semibold text-white disabled:opacity-60"
-        >
-          {loading ? "Logging in..." : "Login"}
-        </button>
-      </form>
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-widest text-gray-500" htmlFor="password">
+                Password
+              </label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="••••••••"
+                value={form.password}
+                onChange={onChange}
+                required
+                autoComplete="current-password"
+              />
+            </div>
+
+            {error && <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
+
+            <Button type="submit" disabled={loading} fullWidth>
+              {loading ? "Signing in..." : "Sign in"}
+            </Button>
+          </form>
+
+          <p className="mt-5 text-center text-sm text-gray-600">
+            New here?{" "}
+            <Link className="font-semibold text-gray-950 underline decoration-gray-300 underline-offset-4 hover:decoration-gray-900" to="/register">
+              Create an account
+            </Link>
+          </p>
+        </CardBody>
+      </Card>
     </section>
   );
 }

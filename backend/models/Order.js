@@ -21,6 +21,11 @@ const orderSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true
+      },
+      fulfillmentStatus: {
+        type: String,
+        enum: ["pending", "processing", "shipped", "delivered", "cancelled"],
+        default: "pending"
       }
     }
   ],
@@ -30,7 +35,7 @@ const orderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["pending", "paid", "shipped", "delivered", "cancelled"],
+    enum: ["pending", "processing", "paid", "shipped", "delivered", "cancelled"],
     default: "pending"
   },
   paymentStatus: {
@@ -48,5 +53,9 @@ const orderSchema = new mongoose.Schema({
     default: null
   }
 }, { timestamps: true });
+
+orderSchema.index({ userId: 1, createdAt: -1 });
+orderSchema.index({ "items.vendorId": 1, createdAt: -1 });
+orderSchema.index({ status: 1, paymentStatus: 1 });
 
 module.exports = mongoose.model("Order", orderSchema);

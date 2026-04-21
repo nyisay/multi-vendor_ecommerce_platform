@@ -1,8 +1,22 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const fs = require("fs");
+const path = require("path");
 
 const getToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+
+const getFilePathFromImageUrl = (imageUrl) => {
+  if (!imageUrl || !imageUrl.startsWith("/uploads/")) return null;
+  return path.join(__dirname, "..", imageUrl);
+};
+
+const removeImageFile = (imageUrl) => {
+  const filePath = getFilePathFromImageUrl(imageUrl);
+  if (filePath && fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+  }
+};
 
 // Register User
 const registerUser = async (req, res) => {
@@ -87,13 +101,16 @@ const getMyProfile = async (req, res) => {
     vendorStatus: req.user.vendorStatus,
     shopName: req.user.shopName,
     phone: req.user.phone,
-    address: req.user.address
+    address: req.user.address,
+    profileImageUrl: req.user.profileImageUrl,
+    profileTheme: req.user.profileTheme,
+    profileCardBackgroundUrl: req.user.profileCardBackgroundUrl,
   });
 };
 
 const updateMyProfile = async (req, res) => {
   try {
-    const { name, phone, address, shopName, password } = req.body;
+    const { name, phone, address, shopName, password, profileTheme, removeProfileImage, removeProfileBackground } = req.body;
     const user = await User.findById(req.user._id);
 
     if (!user) {
@@ -104,10 +121,33 @@ const updateMyProfile = async (req, res) => {
     if (phone !== undefined) user.phone = phone;
     if (address !== undefined) user.address = address;
     if (shopName !== undefined && user.role === "vendor") user.shopName = shopName;
+    if (profileTheme !== undefined) user.profileTheme = profileTheme;
 
     if (password) {
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(password, salt);
+    }
+
+    if (removeProfileImage === "true" || removeProfileImage === true) {
+      removeImageFile(user.profileImageUrl);
+      user.profileImageUrl = undefined;
+    }
+
+    if (removeProfileBackground === "true" || removeProfileBackground === true) {
+      removeImageFile(user.profileCardBackgroundUrl);
+      user.profileCardBackgroundUrl = undefined;
+    }
+
+    const profileImageFile = req.files?.profileImage?.[0];
+    if (profileImageFile) {
+      removeImageFile(user.profileImageUrl);
+      user.profileImageUrl = `/uploads/${profileImageFile.filename}`;
+    }
+
+    const profileBackgroundFile = req.files?.profileCardBackground?.[0];
+    if (profileBackgroundFile) {
+      removeImageFile(user.profileCardBackgroundUrl);
+      user.profileCardBackgroundUrl = `/uploads/${profileBackgroundFile.filename}`;
     }
 
     const updated = await user.save();
@@ -120,7 +160,10 @@ const updateMyProfile = async (req, res) => {
       vendorStatus: updated.vendorStatus,
       shopName: updated.shopName,
       phone: updated.phone,
-      address: updated.address
+      address: updated.address,
+      profileImageUrl: updated.profileImageUrl,
+      profileTheme: updated.profileTheme,
+      profileCardBackgroundUrl: updated.profileCardBackgroundUrl,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -30,4 +30,10 @@ const uploadProductImage = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
-module.exports = { uploadProductImage };
+const uploadProfileAssets = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 8 * 1024 * 1024 },
+});
+
+module.exports = { uploadProductImage, uploadProfileAssets };

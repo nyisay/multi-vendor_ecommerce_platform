@@ -1,27 +1,32 @@
 const Order = require("../models/Order");
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
+const User = require("../models/User");
+const asyncHandler = require("../middleware/asyncHandler");
+const { AppError } = require("../middleware/errorHandler");
 
-const createOrder = async (req, res) => {
+const createOrder = asyncHandler(async (req, res) => {
+  const session = await Order.startSession();
+  session.startTransaction();
   try {
     const cart = await Cart.findOne({ userId: req.user._id })
-      .populate("items.productId");
+      .populate("items.productId")
+      .session(session);
 
     if (!cart || cart.items.length === 0) {
-      return res.status(400).json({ message: "Cart is empty" });
+      throw new AppError("Cart is empty", 400, "EMPTY_CART");
     }
 
     let totalPrice = 0;
     const orderItems = [];
 
     for (const item of cart.items) {
-      const product = await Product.findById(item.productId._id);
+      const product = await Product.findById(item.productId._id).session(session);
       if (!product) {
-        return res.status(400).json({ message: `Product not found: ${item.productId._id}` });
+        throw new AppError(`Product not found: ${item.productId._id}`, 400, "PRODUCT_NOT_FOUND");
       }
-
       if (product.stock < item.quantity) {
-        return res.status(400).json({ message: `Insufficient stock for ${product.name}` });
+        throw new AppError(`Insufficient stock for ${product.name}`, 400, "INSUFFICIENT_STOCK");
       }
 
       totalPrice += product.price * item.quantity;
@@ -29,106 +34,121 @@ const createOrder = async (req, res) => {
         productId: product._id,
         quantity: item.quantity,
         priceAtPurchase: product.price,
-        vendorId: product.vendorId
+        vendorId: product.vendorId,
+        fulfillmentStatus: "pending",
       });
     }
 
-    const order = await Order.create({
-      userId: req.user._id,
-      items: orderItems,
-      totalPrice,
-      status: "pending",
-      paymentStatus: "unpaid"
-    });
+    const [order] = await Order.create(
+      [{
+        userId: req.user._id,
+        items: orderItems,
+        totalPrice,
+        status: "pending",
+        paymentStatus: "unpaid",
+      }],
+      { session },
+    );
 
-    for (const item of orderItems) {
-      await Product.findByIdAndUpdate(item.productId, {
-        $inc: { stock: -item.quantity }
-      });
+    const bulkOps = orderItems.map((item) => ({
+      updateOne: {
+        filter: { _id: item.productId, stock: { $gte: item.quantity } },
+        update: { $inc: { stock: -item.quantity } },
+      },
+    }));
+
+    const bulkResult = await Product.bulkWrite(bulkOps, { session });
+    if (bulkResult.modifiedCount !== orderItems.length) {
+      throw new AppError("Unable to reserve stock for one or more items", 409, "STOCK_CONFLICT");
     }
 
     cart.items = [];
-    await cart.save();
+    await cart.save({ session });
+    await session.commitTransaction();
 
     res.status(201).json(order);
-
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
   }
-};
+});
 
-const getMyOrders = async (req, res) => {
-  try {
-    const orders = await Order.find({ userId: req.user._id })
-      .populate("items.productId", "name price");
+const getMyOrders = asyncHandler(async (req, res) => {
+  const orders = await Order.find({ userId: req.user._id })
+    .populate("items.productId", "name price")
+    .sort({ createdAt: -1 });
 
-    res.json(orders);
+  res.json(orders);
+});
 
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+const cancelMyOrder = asyncHandler(async (req, res) => {
+  const order = await Order.findOne({ _id: req.params.id, userId: req.user._id });
+  if (!order) {
+    throw new AppError("Order not found", 404, "ORDER_NOT_FOUND");
   }
-};
 
-const cancelMyOrder = async (req, res) => {
-  try {
-    const order = await Order.findOne({ _id: req.params.id, userId: req.user._id });
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
-
-    if (!["pending", "paid"].includes(order.status)) {
-      return res.status(400).json({ message: "Order cannot be cancelled at this stage" });
-    }
-
-    order.status = "cancelled";
-    order.cancelledBy = "customer";
-
-    await order.save();
-    res.json({ message: "Order cancelled", order });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  if (!["pending", "paid"].includes(order.status) || order.paymentStatus === "refunded") {
+    throw new AppError("Order cannot be cancelled at this stage", 400, "INVALID_ORDER_STATE");
   }
-};
 
-const getVendorOrders = async (req, res) => {
-  try {
-    const orders = await Order.find({ "items.vendorId": req.user._id })
-      .populate("userId", "name email")
-      .populate("items.productId", "name");
-    res.json(orders);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  order.status = "cancelled";
+  order.cancelledBy = "customer";
+  order.items = order.items.map((item) => ({ ...item.toObject(), fulfillmentStatus: "cancelled" }));
+
+  await order.save();
+  res.json({ message: "Order cancelled", order });
+});
+
+const getVendorOrders = asyncHandler(async (req, res) => {
+  const orders = await Order.find({ "items.vendorId": req.user._id })
+    .populate("userId", "name email")
+    .populate("items.productId", "name")
+    .sort({ createdAt: -1 });
+  res.json(orders);
+});
+
+const updateVendorOrderStatus = asyncHandler(async (req, res) => {
+  const { status } = req.body;
+  const allowed = ["processing", "shipped", "delivered", "cancelled"];
+  if (!allowed.includes(status)) {
+    throw new AppError("Invalid vendor status update", 400, "INVALID_ORDER_STATE");
   }
-};
 
-const updateVendorOrderStatus = async (req, res) => {
-  try {
-    const { status } = req.body;
-    const allowed = ["shipped", "delivered", "cancelled"];
-    if (!allowed.includes(status)) {
-      return res.status(400).json({ message: "Invalid vendor status update" });
-    }
-
-    const order = await Order.findOne({ _id: req.params.id, "items.vendorId": req.user._id });
-    if (!order) {
-      return res.status(404).json({ message: "Order not found for this vendor" });
-    }
-
-    order.status = status;
-    if (status === "cancelled") {
-      order.cancelledBy = "vendor";
-    }
-
-    await order.save();
-    res.json({ message: "Order status updated", order });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  const order = await Order.findOne({ _id: req.params.id, "items.vendorId": req.user._id });
+  if (!order) {
+    throw new AppError("Order not found for this vendor", 404, "ORDER_NOT_FOUND");
   }
-};
 
-const getVendorSalesSummary = async (req, res) => {
-  try {
-    const sales = await Order.aggregate([
+  order.items = order.items.map((item) => {
+    if (item.vendorId.toString() !== req.user._id.toString()) {
+      return item;
+    }
+    const nextItem = item.toObject();
+    nextItem.fulfillmentStatus = status;
+    return nextItem;
+  });
+
+  const statusSet = new Set(order.items.map((item) => item.fulfillmentStatus));
+  if (statusSet.size === 1) {
+    order.status = order.items[0].fulfillmentStatus;
+  } else if (statusSet.has("shipped") || statusSet.has("delivered")) {
+    order.status = "shipped";
+  } else {
+    order.status = "processing";
+  }
+
+  if (status === "cancelled") {
+    order.cancelledBy = "vendor";
+  }
+
+  await order.save();
+  res.json({ message: "Order status updated", order });
+});
+
+const getVendorSalesSummary = asyncHandler(async (req, res) => {
+  const sales = await Order.aggregate([
       { $match: { status: { $in: ["paid", "shipped", "delivered"] } } },
       { $unwind: "$items" },
       { $match: { "items.vendorId": req.user._id } },
@@ -142,81 +162,67 @@ const getVendorSalesSummary = async (req, res) => {
       }
     ]);
 
-    res.json(sales[0] || { totalRevenue: 0, totalItemsSold: 0, totalOrders: 0 });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  res.json(sales[0] || { totalRevenue: 0, totalItemsSold: 0, totalOrders: 0 });
+});
+
+const getAllOrdersAdmin = asyncHandler(async (req, res) => {
+  const orders = await Order.find()
+    .populate("userId", "name email")
+    .populate("items.productId", "name")
+    .sort({ createdAt: -1 });
+  res.json(orders);
+});
+
+const updateOrderStatusAdmin = asyncHandler(async (req, res) => {
+  const { status, paymentStatus } = req.body;
+  const order = await Order.findById(req.params.id);
+
+  if (!order) {
+    throw new AppError("Order not found", 404, "ORDER_NOT_FOUND");
   }
-};
 
-const getAllOrdersAdmin = async (req, res) => {
-  try {
-    const orders = await Order.find()
-      .populate("userId", "name email")
-      .populate("items.productId", "name")
-      .sort({ createdAt: -1 });
-    res.json(orders);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  if (status) {
+    const validStatuses = ["pending", "processing", "paid", "shipped", "delivered", "cancelled"];
+    if (!validStatuses.includes(status)) {
+      throw new AppError("Invalid order status", 400, "INVALID_ORDER_STATE");
+    }
+    order.status = status;
+    if (status === "cancelled") {
+      order.cancelledBy = "admin";
+      order.items = order.items.map((item) => ({ ...item.toObject(), fulfillmentStatus: "cancelled" }));
+    }
   }
-};
 
-const updateOrderStatusAdmin = async (req, res) => {
-  try {
-    const { status, paymentStatus } = req.body;
-    const order = await Order.findById(req.params.id);
-
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
+  if (paymentStatus) {
+    const validPaymentStatuses = ["unpaid", "paid", "failed", "refunded"];
+    if (!validPaymentStatuses.includes(paymentStatus)) {
+      throw new AppError("Invalid payment status", 400, "INVALID_PAYMENT_STATE");
     }
-
-    if (status) {
-      const validStatuses = ["pending", "paid", "shipped", "delivered", "cancelled"];
-      if (!validStatuses.includes(status)) {
-        return res.status(400).json({ message: "Invalid order status" });
-      }
-      order.status = status;
-      if (status === "cancelled") {
-        order.cancelledBy = "admin";
-      }
-    }
-
-    if (paymentStatus) {
-      const validPaymentStatuses = ["unpaid", "paid", "failed", "refunded"];
-      if (!validPaymentStatuses.includes(paymentStatus)) {
-        return res.status(400).json({ message: "Invalid payment status" });
-      }
-      order.paymentStatus = paymentStatus;
-    }
-
-    await order.save();
-    res.json({ message: "Order updated", order });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    order.paymentStatus = paymentStatus;
   }
-};
 
-const getAdminDashboardAnalytics = async (req, res) => {
-  try {
-    const [totalOrders, totalRevenueData, totalUsers, totalProducts] = await Promise.all([
+  await order.save();
+  res.json({ message: "Order updated", order });
+});
+
+const getAdminDashboardAnalytics = asyncHandler(async (req, res) => {
+  const [totalOrders, totalRevenueData, totalUsers, totalProducts] = await Promise.all([
       Order.countDocuments(),
       Order.aggregate([
         { $match: { status: { $in: ["paid", "shipped", "delivered"] } } },
         { $group: { _id: null, revenue: { $sum: "$totalPrice" } } }
       ]),
-      require("../models/User").countDocuments(),
+      User.countDocuments(),
       Product.countDocuments()
     ]);
 
-    res.json({
-      totalOrders,
-      totalRevenue: totalRevenueData[0]?.revenue || 0,
-      totalUsers,
-      totalProducts
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+  res.json({
+    totalOrders,
+    totalRevenue: totalRevenueData[0]?.revenue || 0,
+    totalUsers,
+    totalProducts
+  });
+});
 
 module.exports = {
   createOrder,

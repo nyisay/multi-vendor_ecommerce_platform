@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const { AppError } = require("./errorHandler");
 
 const protect = async (req, res, next) => {
   let token;
@@ -12,27 +13,27 @@ const protect = async (req, res, next) => {
       const user = await User.findById(decoded.id).select("-password");
 
       if (!user) {
-        return res.status(401).json({ message: "User not found" });
+        return next(new AppError("User not found", 401, "UNAUTHORIZED"));
       }
 
       req.user = user;
 
       next();
     } catch (error) {
-      res.status(401).json({ message: "Not authorized" });
+      next(new AppError("Not authorized", 401, "UNAUTHORIZED"));
     }
   } else {
-    res.status(401).json({ message: "No token" });
+    next(new AppError("No token", 401, "UNAUTHORIZED"));
   }
 };
 
 const authorizeRoles = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: "Access denied" });
+      return next(new AppError("Access denied", 403, "FORBIDDEN"));
     }
     if (req.user.role === "vendor" && req.user.vendorStatus !== "approved") {
-      return res.status(403).json({ message: "Vendor is not approved yet" });
+      return next(new AppError("Vendor is not approved yet", 403, "FORBIDDEN"));
     }
     next();
   };

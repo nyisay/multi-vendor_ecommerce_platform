@@ -2,6 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { cartApi, orderApi } from "../services/api";
 import { useToast } from "../context/useToast";
+import Button from "../components/ui/Button";
+import Badge from "../components/ui/Badge";
+import { Card, CardBody } from "../components/ui/Card";
+import { SectionHeading } from "../components/ui/Section";
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
@@ -47,30 +51,92 @@ export default function CheckoutPage() {
   if (loading) return <p className="text-sm text-gray-600">Loading checkout...</p>;
 
   return (
-    <section className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Checkout</h1>
-      {error && <p className="rounded bg-red-100 px-3 py-2 text-sm text-red-700">{error}</p>}
+    <section className="space-y-6">
+      <SectionHeading
+        title="Checkout"
+        description="Confirm your order and complete checkout."
+        right={
+          <button
+            type="button"
+            onClick={() => navigate("/cart")}
+            className="text-sm font-semibold text-gray-800 hover:text-[#7A8B99]"
+          >
+            ← Back to cart
+          </button>
+        }
+      />
 
-      <div className="space-y-3 rounded-xl bg-white p-4 shadow-sm">
-        {(cart?.items || []).map((item) => (
-          <div key={item._id} className="flex justify-between text-sm">
-            <span>
-              {item.productId?.name} x {item.quantity}
-            </span>
-            <span>${(Number(item.productId?.price || 0) * item.quantity).toFixed(2)}</span>
+      {error && <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
+
+      <div className="grid gap-6 lg:grid-cols-12">
+        <div className="space-y-4 lg:col-span-8">
+          <Card>
+            <CardBody className="space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-extrabold uppercase tracking-widest text-gray-500">Items</p>
+                <Badge variant="neutral">{(cart?.items || []).length} items</Badge>
+              </div>
+
+              <div className="divide-y divide-gray-100">
+                {(cart?.items || []).map((item) => {
+                  const unitPrice = Number(item.productId?.price || 0);
+                  const lineTotal = unitPrice * item.quantity;
+                  return (
+                    <div key={item._id} className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-extrabold text-gray-950">{item.productId?.name || "Item"}</p>
+                        <p className="mt-0.5 text-xs font-semibold text-gray-500">
+                          Qty {item.quantity} · Unit ${unitPrice.toFixed(2)}
+                        </p>
+                      </div>
+                      <p className="text-sm font-black text-gray-950">${lineTotal.toFixed(2)}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardBody className="space-y-3">
+              <p className="text-xs font-extrabold uppercase tracking-widest text-gray-500">Payment</p>
+              <div className="rounded-2xl bg-gray-50 p-4 ring-1 ring-gray-100">
+                <p className="text-sm font-semibold text-gray-700">Checkout overview</p>
+                <p className="mt-1 text-sm text-gray-600">
+                  Orders are securely created and sent for fulfillment through our checkout service.
+                </p>
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+
+        <div className="lg:col-span-4">
+          <div className="sticky top-24 space-y-4">
+            <Card>
+              <CardBody className="space-y-4">
+                <p className="text-xs font-extrabold uppercase tracking-widest text-gray-500">Summary</p>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-semibold text-gray-700">Total</span>
+                  <span className="text-lg font-black text-gray-950">${total.toFixed(2)}</span>
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={handleCheckout}
+                  disabled={!cart?.items?.length || placing}
+                  fullWidth
+                >
+                  {placing ? "Processing..." : "Confirm checkout"}
+                </Button>
+
+                <p className="text-xs font-semibold text-gray-500">
+                  By confirming, your order will be placed and sent for fulfillment.
+                </p>
+              </CardBody>
+            </Card>
           </div>
-        ))}
-        <div className="border-t pt-3 text-right font-semibold">Total: ${total.toFixed(2)}</div>
+        </div>
       </div>
-
-      <button
-        type="button"
-        onClick={handleCheckout}
-        disabled={!cart?.items?.length || placing}
-        className="rounded bg-gray-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-      >
-        {placing ? "Processing..." : "Confirm Checkout"}
-      </button>
     </section>
   );
 }

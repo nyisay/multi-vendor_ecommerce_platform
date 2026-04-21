@@ -25,7 +25,11 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const message = error.response?.data?.message || error.message || "Request failed";
-    return Promise.reject(new Error(message));
+    const normalizedError = new Error(message);
+    normalizedError.status = error.response?.status;
+    normalizedError.code = error.response?.data?.code;
+    normalizedError.details = error.response?.data?.details;
+    return Promise.reject(normalizedError);
   },
 );
 
@@ -40,7 +44,9 @@ export const authApi = {
     return api.get("/users/profile").then((res) => res.data);
   },
   updateProfile(payload) {
-    return api.put("/users/profile", payload).then((res) => res.data);
+    return api
+      .put("/users/profile", payload, payload instanceof FormData ? {} : undefined)
+      .then((res) => res.data);
   },
 };
 
