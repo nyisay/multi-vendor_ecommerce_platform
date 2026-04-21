@@ -83,86 +83,46 @@ export default function ProductsPage() {
   };
 
   return (
-    <section className="flex gap-6">
-      {/* Left Sidebar - Categories */}
-      <aside className="hidden w-56 shrink-0 md:block">
-        <div className="sticky top-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Categories</h2>
-          <ul className="space-y-1">
-            <li>
-              <button
-                type="button"
-                onClick={() => updateFilters({ category: "" })}
-                className={`w-full rounded px-3 py-2 text-left text-sm transition ${
-                  selectedCategory === ""
-                    ? "bg-gray-900 font-medium text-white"
-                    : "text-gray-700 hover:bg-gray-100"
-                }`}
-              >
-                All Categories
-              </button>
-            </li>
+    <section className="space-y-4">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Products</h1>
+        <p className="text-sm text-gray-600">Public storefront listing from `/api/products`.</p>
+      </div>
+
+      <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+        <div className="grid gap-2 md:grid-cols-4">
+          <input
+            type="text"
+            value={query}
+            onChange={(event) => {
+              updateFilters({ q: event.target.value });
+            }}
+            placeholder="Search by product, category, supplier..."
+            className="w-full rounded border border-gray-300 px-3 py-2 text-sm text-gray-700 md:col-span-2"
+          />
+          <select
+            value={selectedCategory}
+            onChange={(event) => updateFilters({ category: event.target.value })}
+            className="rounded border border-gray-300 px-3 py-2 text-sm text-gray-700"
+          >
+            <option value="">All categories</option>
             {categories.map((category) => (
-              <li key={category._id}>
-                <button
-                  type="button"
-                  onClick={() => updateFilters({ category: category._id })}
-                  className={`w-full rounded px-3 py-2 text-left text-sm transition ${
-                    selectedCategory === category._id
-                      ? "bg-gray-900 font-medium text-white"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  {category.name}
-                </button>
-              </li>
+              <option key={category._id} value={category._id}>
+                {category.name}
+              </option>
             ))}
-          </ul>
+          </select>
+          <select
+            value={sortBy}
+            onChange={(event) => updateFilters({ sortBy: event.target.value })}
+            className="rounded border border-gray-300 px-3 py-2 text-sm text-gray-700"
+          >
+            <option value="newest">Newest</option>
+            <option value="price_asc">Price: Low to High</option>
+            <option value="price_desc">Price: High to Low</option>
+          </select>
         </div>
-      </aside>
-
-      {/* Main Content */}
-      <div className="min-w-0 flex-1 space-y-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-          <p className="text-sm text-gray-600">Public storefront listing from `/api/products`.</p>
-        </div>
-
-        <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <input
-              type="text"
-              value={query}
-              onChange={(event) => {
-                updateFilters({ q: event.target.value });
-              }}
-              placeholder="Search by product, category, supplier..."
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm text-gray-700 sm:flex-1"
-            />
-            {/* Mobile category select */}
-            <select
-              value={selectedCategory}
-              onChange={(event) => updateFilters({ category: event.target.value })}
-              className="rounded border border-gray-300 px-3 py-2 text-sm text-gray-700 md:hidden"
-            >
-              <option value="">All categories</option>
-              {categories.map((category) => (
-                <option key={category._id} value={category._id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-            <select
-              value={sortBy}
-              onChange={(event) => updateFilters({ sortBy: event.target.value })}
-              className="rounded border border-gray-300 px-3 py-2 text-sm text-gray-700"
-            >
-              <option value="newest">Newest</option>
-              <option value="price_asc">Price: Low to High</option>
-              <option value="price_desc">Price: High to Low</option>
-            </select>
-          </div>
-        </div>
+      </div>
 
       {error && <p className="rounded bg-red-100 px-3 py-2 text-sm text-red-700">{error}</p>}
       {loading && (
@@ -219,35 +179,34 @@ export default function ProductsPage() {
         <p className="rounded bg-white p-4 text-sm text-gray-600 shadow-sm">No products match this search.</p>
       )}
 
-        {pagination && (
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-gray-500">
-              Showing {products.length} of {pagination.total} products
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => goToPage(Math.max(1, page - 1))}
-                disabled={page <= 1}
-                className="rounded border border-gray-300 px-3 py-1 text-sm disabled:opacity-50"
-              >
-                Previous
-              </button>
-              <span className="text-sm text-gray-700">
-                Page {pagination.page} of {pagination.totalPages || 1}
-              </span>
-              <button
-                type="button"
-                onClick={() => goToPage(Math.min(pagination.totalPages || page, page + 1))}
-                disabled={page >= (pagination.totalPages || 1)}
-                className="rounded border border-gray-300 px-3 py-1 text-sm disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
+      {pagination && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-gray-500">
+            Showing {products.length} of {pagination.total} products
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => goToPage(Math.max(1, page - 1))}
+              disabled={page <= 1}
+              className="rounded border border-gray-300 px-3 py-1 text-sm disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="text-sm text-gray-700">
+              Page {pagination.page} of {pagination.totalPages || 1}
+            </span>
+            <button
+              type="button"
+              onClick={() => goToPage(Math.min(pagination.totalPages || page, page + 1))}
+              disabled={page >= (pagination.totalPages || 1)}
+              className="rounded border border-gray-300 px-3 py-1 text-sm disabled:opacity-50"
+            >
+              Next
+            </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }
