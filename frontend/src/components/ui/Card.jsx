@@ -4,7 +4,7 @@ export function Card({ className = "", children }) {
   return (
     <div
       className={cx(
-        "rounded-2xl border border-slate-200/80 bg-white/95 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.35)]",
+        "rounded-2xl border border-slate-200 bg-white/95 shadow-[0_18px_48px_-40px_rgba(15,23,42,0.42)]",
         className,
       )}
     >

@@ -6,7 +6,7 @@ export default function ProtectedRoute({ children, allowedRoles = [] }) {
   const location = useLocation();
 
   if (!authReady) {
-    return <p className="text-sm text-gray-600">Checking session...</p>;
+    return <p className="text-sm font-medium text-slate-600">Checking session...</p>;
   }
 
   if (!isAuthenticated) {

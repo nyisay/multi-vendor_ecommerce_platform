@@ -118,21 +118,22 @@ export default function VendorProductsPage() {
     <section className="grid gap-5 lg:grid-cols-[250px_1fr]">
       <DashboardSidebar role="vendor" />
       <div className="space-y-4">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">Vendor Product Management</h1>
-          <p className="text-sm font-medium text-slate-600">Add, edit, and manage your own products with images.</p>
+        <div className="rounded-[1.9rem] border border-slate-200 bg-[linear-gradient(180deg,_#fffaf0_0%,_#ffffff_100%)] p-6 shadow-[0_22px_60px_-46px_rgba(15,23,42,0.42)]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Vendor workspace</p>
+          <h1 className="mt-2 text-3xl font-black tracking-[-0.03em] text-slate-950">Vendor Product Management</h1>
+          <p className="mt-2 text-sm font-medium text-slate-600">Add, edit, and manage your own products with images.</p>
         </div>
 
-        {error && <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+        {error && <p className="rounded-xl border border-red-200 bg-[linear-gradient(180deg,_#fff1f2_0%,_#ffffff_100%)] px-3 py-2 text-sm text-red-700">{error}</p>}
 
-        <form onSubmit={submitCreate} className="grid gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.35)] md:grid-cols-2">
+        <form onSubmit={submitCreate} className="grid gap-3 rounded-[1.8rem] border border-slate-200 bg-white p-4 shadow-[0_18px_48px_-40px_rgba(15,23,42,0.35)] md:grid-cols-2">
           <input
             name="name"
             placeholder="Product name"
             value={form.name}
             onChange={onChange}
             required
-            className="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none"
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-amber-300 focus:bg-amber-50/30 focus:outline-none"
           />
           <input
             name="price"
@@ -143,7 +144,7 @@ export default function VendorProductsPage() {
             value={form.price}
             onChange={onChange}
             required
-            className="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none"
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-amber-300 focus:bg-amber-50/30 focus:outline-none"
           />
           <input
             name="stock"
@@ -153,14 +154,14 @@ export default function VendorProductsPage() {
             value={form.stock}
             onChange={onChange}
             required
-            className="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none"
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-amber-300 focus:bg-amber-50/30 focus:outline-none"
           />
           <select
             name="categoryId"
             value={form.categoryId}
             onChange={onChange}
             required
-            className="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none"
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-amber-300 focus:bg-amber-50/30 focus:outline-none"
           >
             <option value="">Select category</option>
             {categories.map((category) => (
@@ -174,7 +175,7 @@ export default function VendorProductsPage() {
             placeholder="Description"
             value={form.description}
             onChange={onChange}
-            className="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none md:col-span-2"
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-amber-300 focus:bg-amber-50/30 focus:outline-none md:col-span-2"
             rows={3}
           />
           <div className="space-y-2 md:col-span-2">
@@ -183,7 +184,7 @@ export default function VendorProductsPage() {
               type="file"
               accept="image/*"
               onChange={(event) => setImageFile(event.target.files?.[0] || null)}
-              className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-700"
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700"
             />
             {editingId && (
               <label className="inline-flex items-center gap-2 text-sm text-slate-700">
@@ -197,14 +198,14 @@ export default function VendorProductsPage() {
             )}
           </div>
           <div className="flex gap-2 md:col-span-2">
-            <button type="submit" className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800">
+            <button type="submit" className="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">
               {editingId ? "Update Product" : "Create Product"}
             </button>
             {editingId && (
               <button
                 type="button"
                 onClick={resetForm}
-                className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-amber-50"
               >
                 Cancel Edit
               </button>
@@ -216,7 +217,7 @@ export default function VendorProductsPage() {
 
         <div className="space-y-3">
           {products.map((product) => (
-            <article key={product._id} className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.35)]">
+            <article key={product._id} className="flex items-center justify-between rounded-[1.8rem] border border-slate-200 bg-white p-4 shadow-[0_18px_48px_-40px_rgba(15,23,42,0.35)]">
               <div className="flex items-center gap-3">
                 {product.imageUrl ? (
                   <img
@@ -238,14 +239,14 @@ export default function VendorProductsPage() {
                 <button
                   type="button"
                   onClick={() => startEdit(product)}
-                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                  className="rounded-full border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-amber-50"
                 >
                   Edit
                 </button>
                 <button
                   type="button"
                   onClick={() => deleteProduct(product._id)}
-                  className="rounded-lg bg-red-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-red-800"
+                  className="rounded-full bg-rose-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-rose-700"
                 >
                   Delete
                 </button>

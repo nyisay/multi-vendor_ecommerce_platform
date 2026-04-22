@@ -59,7 +59,7 @@ export default function CheckoutPage() {
           <button
             type="button"
             onClick={() => navigate("/cart")}
-            className="text-sm font-semibold text-slate-700 transition hover:text-blue-700"
+            className="text-sm font-semibold text-slate-700 transition hover:text-amber-700"
           >
             ← Back to cart
           </button>
@@ -67,7 +67,7 @@ export default function CheckoutPage() {
       />
 
       {error && (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+        <p className="rounded-xl border border-red-200 bg-[linear-gradient(180deg,_#fff1f2_0%,_#ffffff_100%)] px-4 py-3 text-sm font-semibold text-red-700">
           {error}
         </p>
       )}
@@ -109,7 +109,7 @@ export default function CheckoutPage() {
           <Card>
             <CardBody className="space-y-3">
               <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-slate-500">Payment details</p>
-              <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4">
+              <div className="rounded-xl border border-amber-200 bg-[linear-gradient(180deg,_#fffaf0_0%,_#ffffff_100%)] p-4">
                 <p className="text-sm font-semibold text-slate-800">Secure checkout summary</p>
                 <p className="mt-1 text-sm text-slate-600">
                   Your order is created through the marketplace checkout service and then routed for
@@ -125,7 +125,7 @@ export default function CheckoutPage() {
             <Card className="overflow-hidden">
               <CardBody className="space-y-4">
                 <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-slate-500">Summary</p>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="rounded-xl border border-slate-200 bg-[linear-gradient(180deg,_#fffaf0_0%,_#ffffff_100%)] p-4">
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-semibold text-slate-700">Order total</span>
                     <span className="text-xl font-black text-slate-950">${total.toFixed(2)}</span>

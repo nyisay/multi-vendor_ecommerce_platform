@@ -42,7 +42,7 @@ export default function AppLayout() {
       <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl">
         <div className="border-0 border-slate-800 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.15),transparent_100%)] text-white shadow-[0_22px_60px_-44px_rgba(15,23,42,0.9)]">
           <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3 text-xs">
-            <p className="hidden font-semibold tracking-[0.02em] text-black sm:block">
+            <p className="hidden font-semibold tracking-[0.02em] text-slate-950 sm:block">
               Trusted multi-vendor marketplace for everyday shopping
             </p>
             <div className="flex items-center gap-2">
@@ -63,13 +63,13 @@ export default function AppLayout() {
                 <>
                   <Link
                     to="/login"
-                    className="rounded-full border border-gray-300 bg-gray-600 px-3 py-1.5 text-[11px] font-semibold text-black transition hover:bg-gray-900 hover:text-black"
+                    className="rounded-full border border-slate-200 bg-white/90 px-3 py-1.5 text-[11px] font-semibold text-slate-950 transition hover:bg-white"
                   >
                     Sign in
                   </Link>
                   <Link
                     to="/register"
-                    className="rounded-full border border-gray-500 bg-yellow-300 px-3 py-1.5 text-[11px] font-semibold text-black transition hover:bg-amber-300 hover:text-black"
+                    className="rounded-full border border-amber-200 bg-amber-300 px-3 py-1.5 text-[11px] font-semibold text-slate-950 transition hover:bg-amber-200"
                   >
                     Create account
                   </Link>
@@ -179,7 +179,7 @@ export default function AppLayout() {
                   type="button"
                   aria-label={mobileOpen ? "Close menu" : "Open menu"}
                   aria-expanded={mobileOpen}
-                  className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition hover:border-slate-400 hover:bg-slate-50 md:hidden"
+                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition hover:border-amber-200 hover:bg-amber-50 md:hidden"
                   onClick={() => setMobileOpen((prev) => !prev)}
                 >
                   Menu
@@ -197,7 +197,7 @@ export default function AppLayout() {
                     <NavLink
                       onClick={closeMobile}
                       to="/products"
-                      className="px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                      className="rounded-[1rem] px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white"
                     >
                       Products
                     </NavLink>
@@ -205,7 +205,7 @@ export default function AppLayout() {
                       <NavLink
                         onClick={closeMobile}
                         to="/profile"
-                        className="px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                        className="rounded-[1rem] px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white"
                       >
                         Account
                       </NavLink>
@@ -215,14 +215,14 @@ export default function AppLayout() {
                         <NavLink
                           onClick={closeMobile}
                           to="/cart"
-                          className="px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                          className="rounded-[1rem] px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white"
                         >
                           Cart
                         </NavLink>
                         <NavLink
                           onClick={closeMobile}
                           to="/orders"
-                          className="px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                          className="rounded-[1rem] px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white"
                         >
                           Orders
                         </NavLink>
@@ -232,7 +232,7 @@ export default function AppLayout() {
                       <NavLink
                         onClick={closeMobile}
                         to="/vendor/dashboard"
-                        className="px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                        className="rounded-[1rem] px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white"
                       >
                         Vendor Panel
                       </NavLink>
@@ -241,7 +241,7 @@ export default function AppLayout() {
                       <NavLink
                         onClick={closeMobile}
                         to="/admin/dashboard"
-                        className="px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                        className="rounded-[1rem] px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white"
                       >
                         Admin Panel
                       </NavLink>
@@ -255,7 +255,7 @@ export default function AppLayout() {
                         logout();
                         closeMobile();
                       }}
-                      className="mt-4 w-full bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                      className="mt-4 w-full rounded-[1rem] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                     >
                       Logout
                     </button>
@@ -265,14 +265,14 @@ export default function AppLayout() {
                       <Link
                         onClick={closeMobile}
                         to="/login"
-                        className="border border-slate-300 px-4 py-3 text-center text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                        className="rounded-[1rem] border border-slate-200 px-4 py-3 text-center text-sm font-semibold text-slate-900 transition hover:bg-white"
                       >
                         Sign in
                       </Link>
                       <Link
                         onClick={closeMobile}
                         to="/register"
-                        className="bg-amber-300 px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-amber-200"
+                        className="rounded-[1rem] bg-amber-300 px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-amber-200"
                       >
                         Create account
                       </Link>

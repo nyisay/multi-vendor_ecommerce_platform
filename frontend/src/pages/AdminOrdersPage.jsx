@@ -56,16 +56,22 @@ export default function AdminOrdersPage() {
     <section className="grid gap-5 lg:grid-cols-[250px_1fr]">
       <DashboardSidebar role="admin" />
       <div className="space-y-4">
-        <h1 className="text-3xl font-black tracking-tight text-slate-900">Manage Orders</h1>
+        <div className="rounded-[1.9rem] border border-slate-200 bg-[linear-gradient(180deg,_#fffaf0_0%,_#ffffff_100%)] p-6 shadow-[0_22px_60px_-46px_rgba(15,23,42,0.42)]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Admin workspace</p>
+          <h1 className="mt-2 text-3xl font-black tracking-[-0.03em] text-slate-950">Manage Orders</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Update order states from payment through delivery with clearer action styling.
+          </p>
+        </div>
         {loading ? (
           <p className="text-sm font-semibold text-slate-600">Loading orders...</p>
         ) : (
           <div className="space-y-3">
             {orders.map((order) => (
-              <article key={order._id} className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.35)]">
+              <article key={order._id} className="rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-[0_18px_48px_-40px_rgba(15,23,42,0.35)]">
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-bold tracking-tight text-slate-900">Order #{order._id.slice(-6)}</p>
-                  <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-slate-700">
+                  <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-slate-700">
                     {order.status}
                   </span>
                 </div>
@@ -78,7 +84,7 @@ export default function AdminOrdersPage() {
                       key={status}
                       type="button"
                       onClick={() => updateStatus(order._id, status)}
-                      className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+                      className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-amber-200 hover:bg-amber-50 hover:text-slate-950"
                     >
                       {status}
                     </button>

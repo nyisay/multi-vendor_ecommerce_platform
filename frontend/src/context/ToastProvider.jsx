@@ -36,10 +36,10 @@ export function ToastProvider({ children }) {
             key={toast.id}
             className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-white shadow-lg backdrop-blur-sm ${
               toast.type === "error"
-                ? "border-red-300/60 bg-red-500/90"
+                ? "border-rose-300/70 bg-rose-600/90"
                 : toast.type === "success"
-                  ? "border-emerald-300/60 bg-emerald-500/90"
-                  : "border-slate-300/50 bg-slate-800/90"
+                  ? "border-emerald-300/70 bg-emerald-600/90"
+                  : "border-amber-300/60 bg-slate-900/92"
             }`}
             style={{ animation: "toastEnter 220ms ease-out" }}
           >

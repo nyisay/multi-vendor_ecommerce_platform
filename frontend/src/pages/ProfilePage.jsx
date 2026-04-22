@@ -247,7 +247,7 @@ export default function ProfilePage() {
                   type="file"
                   accept="image/*"
                   onChange={(event) => setProfileImageFile(event.target.files?.[0] || null)}
-                  className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-700"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700"
                 />
                 <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600">
                   <input
@@ -272,7 +272,7 @@ export default function ProfilePage() {
                 type="file"
                 accept="image/*"
                 onChange={(event) => setProfileBackgroundFile(event.target.files?.[0] || null)}
-                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-700"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700"
               />
               <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600">
                 <input

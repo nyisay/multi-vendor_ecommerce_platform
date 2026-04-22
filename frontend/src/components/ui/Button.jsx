@@ -1,11 +1,15 @@
 const cx = (...parts) => parts.filter(Boolean).join(" ");
 
 const VARIANTS = {
-  primary: "border border-blue-700 bg-blue-700 text-white shadow-sm hover:bg-blue-800",
-  secondary: "border border-teal-600 bg-teal-600 text-white shadow-sm hover:bg-teal-700",
-  outline: "border border-slate-300 bg-white text-slate-900 hover:border-blue-300 hover:bg-blue-50",
-  ghost: "text-slate-800 hover:bg-slate-100",
-  danger: "border border-red-700 bg-red-700 text-white shadow-sm hover:bg-red-800",
+  primary:
+    "border border-slate-950 bg-slate-950 text-white shadow-[0_18px_35px_-20px_rgba(15,23,42,0.72)] hover:bg-slate-800",
+  secondary:
+    "border border-amber-200 bg-amber-300 text-slate-950 shadow-[0_18px_35px_-22px_rgba(251,191,36,0.8)] hover:bg-amber-200",
+  outline:
+    "border border-slate-200 bg-white text-slate-900 hover:border-amber-200 hover:bg-amber-50",
+  ghost: "text-slate-700 hover:bg-slate-100 hover:text-slate-950",
+  danger:
+    "border border-rose-600 bg-rose-600 text-white shadow-[0_18px_35px_-22px_rgba(225,29,72,0.45)] hover:bg-rose-700",
 };
 
 const SIZES = {
@@ -29,7 +33,7 @@ export default function Button({
       type={type}
       disabled={disabled}
       className={cx(
-        "inline-flex items-center justify-center rounded-xl font-semibold tracking-tight transition duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/35 disabled:cursor-not-allowed disabled:opacity-60",
+        "inline-flex items-center justify-center rounded-xl font-semibold tracking-tight transition duration-200 focus:outline-none focus:ring-2 focus:ring-amber-300/60 disabled:cursor-not-allowed disabled:opacity-60",
         VARIANTS[variant] || VARIANTS.primary,
         SIZES[size] || SIZES.md,
         fullWidth ? "w-full" : "",

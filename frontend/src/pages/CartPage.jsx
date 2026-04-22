@@ -84,14 +84,14 @@ export default function CartPage() {
         title="Cart"
         description="Review items before checkout."
         right={
-          <Link to="/products" className="text-sm font-semibold text-gray-800 hover:text-blue-700">
+          <Link to="/products" className="text-sm font-semibold text-slate-800 transition hover:text-amber-700">
             Continue shopping
           </Link>
         }
       />
 
-      {loading && <p className="text-sm font-semibold text-gray-600">Loading cart...</p>}
-      {error && <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
+      {loading && <p className="text-sm font-semibold text-slate-600">Loading cart...</p>}
+      {error && <p className="rounded-2xl border border-red-200 bg-[linear-gradient(180deg,_#fff1f2_0%,_#ffffff_100%)] px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
 
       <div className="grid gap-6 lg:grid-cols-12">
         <div className="space-y-4 lg:col-span-8">
@@ -103,11 +103,11 @@ export default function CartPage() {
                 <CardBody className="space-y-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
-                      <p className="truncate text-lg font-black tracking-tight text-gray-950">
+                      <p className="truncate text-lg font-black tracking-tight text-slate-950">
                         {item.productId?.name || "Item"}
                       </p>
-                      <p className="mt-1 text-sm font-semibold text-gray-600">
-                        Unit price <span className="text-gray-900">${unitPrice.toFixed(2)}</span>
+                      <p className="mt-1 text-sm font-semibold text-slate-600">
+                        Unit price <span className="text-slate-950">${unitPrice.toFixed(2)}</span>
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -117,21 +117,21 @@ export default function CartPage() {
                   </div>
 
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white p-2 shadow-sm">
+                    <div className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,_#fffaf0_0%,_#ffffff_100%)] p-2 shadow-sm">
                       <button
                         type="button"
                         aria-label="Decrease quantity"
                         onClick={() => updateQty(item.productId?._id, Math.max(1, item.quantity - 1))}
-                        className="h-9 w-9 rounded-xl border border-gray-200 bg-white text-sm font-black text-gray-900 transition hover:bg-gray-50"
+                        className="h-9 w-9 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-900 transition hover:bg-amber-50"
                       >
                         −
                       </button>
-                      <span className="min-w-10 text-center text-sm font-extrabold text-gray-950">{item.quantity}</span>
+                      <span className="min-w-10 text-center text-sm font-extrabold text-slate-950">{item.quantity}</span>
                       <button
                         type="button"
                         aria-label="Increase quantity"
                         onClick={() => updateQty(item.productId?._id, item.quantity + 1)}
-                        className="h-9 w-9 rounded-xl border border-gray-200 bg-white text-sm font-black text-gray-900 transition hover:bg-gray-50"
+                        className="h-9 w-9 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-900 transition hover:bg-amber-50"
                       >
                         +
                       </button>
@@ -149,8 +149,8 @@ export default function CartPage() {
           {!loading && (!cart?.items || cart.items.length === 0) && (
             <Card>
               <CardBody className="text-center">
-                <p className="text-sm font-semibold text-gray-700">Your cart is empty.</p>
-                <p className="mt-1 text-sm text-gray-600">Browse products and add items to get started.</p>
+                <p className="text-sm font-semibold text-slate-700">Your cart is empty.</p>
+                <p className="mt-1 text-sm text-slate-600">Browse products and add items to get started.</p>
                 <div className="mt-5">
                   <Link to="/products">
                     <Button>Shop products</Button>
@@ -165,10 +165,10 @@ export default function CartPage() {
           <div className="sticky top-24 space-y-4">
             <Card>
               <CardBody className="space-y-4">
-                <p className="text-xs font-extrabold uppercase tracking-widest text-gray-500">Order summary</p>
+                <p className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Order summary</p>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="font-semibold text-gray-700">Estimated total</span>
-                  <span className="text-lg font-black text-gray-950">${estimatedTotal.toFixed(2)}</span>
+                  <span className="font-semibold text-slate-700">Estimated total</span>
+                  <span className="text-lg font-black text-slate-950">${estimatedTotal.toFixed(2)}</span>
                 </div>
 
                 <div className="grid gap-2">
@@ -189,9 +189,9 @@ export default function CartPage() {
                   </Button>
                 </div>
 
-                <div className="rounded-2xl bg-gray-50 p-4 ring-1 ring-gray-100">
-                  <p className="text-xs font-extrabold uppercase tracking-widest text-gray-500">Notes</p>
-                  <p className="mt-2 text-sm text-gray-700">
+                <div className="rounded-2xl bg-[linear-gradient(180deg,_#fffaf0_0%,_#ffffff_100%)] p-4 ring-1 ring-amber-100">
+                  <p className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Notes</p>
+                  <p className="mt-2 text-sm text-slate-700">
                     Order totals and item availability are updated in real time from current catalog data.
                   </p>
                 </div>

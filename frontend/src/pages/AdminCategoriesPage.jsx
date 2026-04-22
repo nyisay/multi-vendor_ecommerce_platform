@@ -120,18 +120,19 @@ export default function AdminCategoriesPage() {
     <section className="grid gap-5 lg:grid-cols-[250px_1fr]">
       <DashboardSidebar role="admin" />
       <div className="space-y-4">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">Manage Categories</h1>
-          <p className="text-sm font-medium text-slate-600">Create and view product categories.</p>
+        <div className="rounded-[1.9rem] border border-slate-200 bg-[linear-gradient(180deg,_#fffaf0_0%,_#ffffff_100%)] p-6 shadow-[0_22px_60px_-46px_rgba(15,23,42,0.42)]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Admin workspace</p>
+          <h1 className="mt-2 text-3xl font-black tracking-[-0.03em] text-slate-950">Manage Categories</h1>
+          <p className="mt-2 text-sm font-medium text-slate-600">Create and view product categories.</p>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-3 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.35)]">
+        <form onSubmit={onSubmit} className="space-y-3 rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-[0_18px_48px_-40px_rgba(15,23,42,0.35)]">
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
             placeholder="Category name"
             required
-            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none"
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-amber-300 focus:bg-amber-50/30 focus:outline-none"
           />
 
           {error && <p className="text-sm text-red-600">{error}</p>}
@@ -139,13 +140,13 @@ export default function AdminCategoriesPage() {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:opacity-60"
+            className="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
           >
             {loading ? "Creating..." : "Create Category"}
           </button>
         </form>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.35)]">
+        <div className="rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-[0_18px_48px_-40px_rgba(15,23,42,0.35)]">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-lg font-bold tracking-tight text-slate-900">Recommended category set</h2>
@@ -155,14 +156,14 @@ export default function AdminCategoriesPage() {
               type="button"
               onClick={seedRecommended}
               disabled={seeding}
-              className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
+              className="rounded-full bg-amber-300 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-200 disabled:opacity-60"
             >
               {seeding ? "Seeding..." : "Seed categories"}
             </button>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             {RECOMMENDED_CATEGORIES.slice(0, 18).map((cat) => (
-              <span key={cat} className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+              <span key={cat} className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-slate-700">
                 {cat}
               </span>
             ))}
@@ -174,11 +175,11 @@ export default function AdminCategoriesPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.35)]">
+        <div className="rounded-[1.8rem] border border-slate-200 bg-white p-4 shadow-[0_18px_48px_-40px_rgba(15,23,42,0.35)]">
           <h2 className="mb-2 text-lg font-bold tracking-tight text-slate-900">Current categories</h2>
           <div className="flex flex-wrap gap-2">
             {categories.map((category) => (
-              <span key={category._id} className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
+              <span key={category._id} className="rounded-full border border-slate-200 bg-[linear-gradient(180deg,_#fffaf0_0%,_#ffffff_100%)] px-3 py-1 text-sm font-medium text-slate-700">
                 {category.name}
               </span>
             ))}

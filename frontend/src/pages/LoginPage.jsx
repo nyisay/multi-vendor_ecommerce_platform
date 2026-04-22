@@ -35,18 +35,36 @@ export default function LoginPage() {
   };
 
   return (
-    <section className="mx-auto max-w-md">
-      <div className="mb-6 text-center">
-        <p className="text-xs font-extrabold uppercase tracking-widest text-gray-500">Welcome back</p>
-        <h1 className="mt-2 text-3xl font-black tracking-tight text-gray-950">Sign in</h1>
-        <p className="mt-1 text-sm text-gray-600">Access your account and continue shopping.</p>
+    <section className="mx-auto max-w-md space-y-6">
+      <div className="rounded-[1.8rem] border border-slate-200 bg-[linear-gradient(180deg,_#fffaf0_0%,_#ffffff_100%)] px-6 py-6 text-center shadow-[0_20px_55px_-42px_rgba(15,23,42,0.4)]">
+        <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-500">
+          Welcome back
+        </p>
+        <h1 className="mt-2 text-3xl font-black tracking-[-0.03em] text-slate-950">
+          Sign in
+        </h1>
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          Access your account and continue shopping with the same cleaner
+          marketplace flow.
+        </p>
       </div>
 
-      <Card>
-        <CardBody>
+      <Card className="overflow-hidden rounded-[1.9rem] border border-slate-200 shadow-[0_24px_70px_-46px_rgba(15,23,42,0.42)]">
+        <div className="border-b border-slate-200 bg-[linear-gradient(180deg,_#fffaf0_0%,_#ffffff_100%)] px-6 py-5">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">
+            Account access
+          </p>
+          <p className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+            Continue to your dashboard
+          </p>
+        </div>
+        <CardBody className="p-6">
           <form className="space-y-4" onSubmit={onSubmit}>
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-gray-500" htmlFor="email">
+              <label
+                className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500"
+                htmlFor="email"
+              >
                 Email
               </label>
               <Input
@@ -62,7 +80,10 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-gray-500" htmlFor="password">
+              <label
+                className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500"
+                htmlFor="password"
+              >
                 Password
               </label>
               <Input
@@ -77,16 +98,23 @@ export default function LoginPage() {
               />
             </div>
 
-            {error && <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
+            {error && (
+              <p className="rounded-[1.4rem] border border-red-200 bg-[linear-gradient(180deg,_#fff1f2_0%,_#ffffff_100%)] px-4 py-3 text-sm font-semibold text-red-700">
+                {error}
+              </p>
+            )}
 
             <Button type="submit" disabled={loading} fullWidth>
               {loading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
 
-          <p className="mt-5 text-center text-sm text-gray-600">
+          <p className="mt-5 text-center text-sm text-slate-600">
             New here?{" "}
-            <Link className="font-semibold text-gray-950 underline decoration-gray-300 underline-offset-4 hover:decoration-gray-900" to="/register">
+            <Link
+              className="font-semibold text-slate-950 underline decoration-slate-300 underline-offset-4 hover:decoration-amber-300"
+              to="/register"
+            >
               Create an account
             </Link>
           </p>

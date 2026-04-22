@@ -23,13 +23,19 @@ export default function AdminUsersPage() {
     <section className="grid gap-5 lg:grid-cols-[250px_1fr]">
       <DashboardSidebar role="admin" />
       <div className="space-y-4">
-        <h1 className="text-3xl font-black tracking-tight text-slate-900">Manage Users</h1>
+        <div className="rounded-[1.9rem] border border-slate-200 bg-[linear-gradient(180deg,_#fffaf0_0%,_#ffffff_100%)] p-6 shadow-[0_22px_60px_-46px_rgba(15,23,42,0.42)]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Admin workspace</p>
+          <h1 className="mt-2 text-3xl font-black tracking-[-0.03em] text-slate-950">Manage Users</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Review account roles and vendor approval states without leaving the admin panel.
+          </p>
+        </div>
         {loading ? (
           <p className="text-sm font-semibold text-slate-600">Loading users...</p>
         ) : (
-          <div className="overflow-auto rounded-2xl border border-slate-200/80 bg-white shadow-[0_10px_28px_-18px_rgba(15,23,42,0.35)]">
+          <div className="overflow-auto rounded-[1.8rem] border border-slate-200 bg-white shadow-[0_18px_48px_-40px_rgba(15,23,42,0.35)]">
             <table className="min-w-full text-sm text-slate-700">
-              <thead className="bg-slate-50 text-left text-xs uppercase tracking-[0.08em] text-slate-500">
+              <thead className="bg-[linear-gradient(180deg,_#fffaf0_0%,_#ffffff_100%)] text-left text-xs uppercase tracking-[0.12em] text-slate-500">
                 <tr>
                   <th className="p-3 font-bold">Name</th>
                   <th className="p-3 font-bold">Email</th>
@@ -39,7 +45,7 @@ export default function AdminUsersPage() {
               </thead>
               <tbody>
                 {users.map((user) => (
-                  <tr key={user._id} className="border-t border-slate-100">
+                  <tr key={user._id} className="border-t border-slate-100 transition hover:bg-amber-50/40">
                     <td className="p-3 font-semibold text-slate-900">{user.name}</td>
                     <td className="p-3">{user.email}</td>
                     <td className="p-3">{user.role}</td>
