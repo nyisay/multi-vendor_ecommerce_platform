@@ -4,8 +4,10 @@ import { useToast } from "../context/useToast";
 import { getImageUrl } from "../services/api";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
+import Select from "../components/ui/Select";
 import Badge from "../components/ui/Badge";
 import { SectionHeading } from "../components/ui/Section";
+import { Card, CardBody } from "../components/ui/Card";
 
 export default function ProfilePage() {
   const { user, updateProfile, refreshProfile } = useAuth();
@@ -27,11 +29,11 @@ export default function ProfilePage() {
   );
 
   const themeClassMap = {
-    ocean: "bg-gradient-to-br from-cyan-500/80 to-blue-500/80 text-white",
-    sunset: "bg-gradient-to-br from-rose-500/80 to-amber-500/80 text-white",
-    midnight: "bg-gradient-to-br from-slate-800/90 to-indigo-800/90 text-white",
-    forest: "bg-gradient-to-br from-emerald-600/80 to-teal-700/80 text-white",
-    custom: "bg-black/50 text-white",
+    ocean: "bg-gradient-to-br from-sky-600 to-blue-700 text-white",
+    sunset: "bg-gradient-to-br from-orange-500 to-rose-600 text-white",
+    midnight: "bg-gradient-to-br from-slate-800 to-indigo-900 text-white",
+    forest: "bg-gradient-to-br from-emerald-600 to-teal-700 text-white",
+    custom: "bg-slate-800 text-white",
   };
 
   useEffect(() => {
@@ -77,9 +79,9 @@ export default function ProfilePage() {
       await refreshProfile();
       showToast("Updating...", "info");
 
-setTimeout(() => {
-  showToast("Profile updated", "success");
-}, 1500);
+      setTimeout(() => {
+        showToast("Profile updated", "success");
+      }, 1500);
       setPassword("");
       setProfileImageFile(null);
       setProfileBackgroundFile(null);
@@ -93,105 +95,151 @@ setTimeout(() => {
   };
 
   return (
-    <section className="mx-auto max-w-3xl space-y-6">
+    <section className="mx-auto max-w-5xl space-y-6">
       <SectionHeading
-        title="Profile"
-        description="Manage your account details."
+        title="Profile Settings"
+        description="Manage your account details, visual theme, and security settings."
         right={user?.role ? <Badge variant="neutral">{user.role}</Badge> : null}
       />
 
-      <div
-        className={`overflow-hidden rounded-3xl border border-white/40 p-5 shadow-xl ${
-          themeClassMap[theme] || themeClassMap.ocean
-        }`}
-        style={
-          user?.profileCardBackgroundUrl || profileBackgroundFile
-            ? {
-                backgroundImage: `url(${profileBackgroundFile ? previewProfileBackgroundUrl : getImageUrl(user.profileCardBackgroundUrl)})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }
-            : undefined
-        }
-      >
-            <div className="flex items-center gap-4 rounded-2xl bg-black/30 p-4 backdrop-blur-sm">
+      <Card className="overflow-hidden">
+        <CardBody className="space-y-6 p-0">
+          <div
+            className={`relative overflow-hidden px-6 py-6 sm:px-8 ${themeClassMap[theme] || themeClassMap.ocean}`}
+            style={
+              user?.profileCardBackgroundUrl || profileBackgroundFile
+                ? {
+                    backgroundImage: `url(${profileBackgroundFile ? previewProfileBackgroundUrl : getImageUrl(user.profileCardBackgroundUrl)})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                  }
+                : undefined
+            }
+          >
+            <div className="absolute inset-0 bg-slate-900/20" />
+            <div className="relative flex items-center gap-4">
               {user?.profileImageUrl || profileImageFile ? (
                 <img
                   src={profileImageFile ? previewProfileImageUrl : getImageUrl(user.profileImageUrl)}
                   alt={user?.name || "Profile"}
-                  className="h-16 w-16 rounded-full border-2 border-white/80 object-cover"
+                  className="h-20 w-20 rounded-2xl border border-white/65 object-cover shadow-lg"
                 />
               ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/25 text-xl font-black">
+                <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-white/60 bg-white/25 text-2xl font-black">
                   {(user?.name || "U").slice(0, 1).toUpperCase()}
                 </div>
               )}
               <div>
-                <p className="text-lg font-black">{user?.name || "User"}</p>
-                <p className="text-sm opacity-90">{user?.email || ""}</p>
-                <p className="text-xs font-semibold uppercase tracking-widest opacity-90">{theme} theme</p>
+                <p className="text-xl font-black">{user?.name || "User"}</p>
+                <p className="text-sm font-medium text-white/90">{user?.email || ""}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-white/90">
+                  {theme} theme
+                </p>
               </div>
             </div>
-            <form key={user?._id || "guest"} onSubmit={onSubmit} className="mt-4 space-y-4 rounded-2xl bg-black/30 p-4 backdrop-blur-sm">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-white/80" htmlFor="name">
-                    Name
-                  </label>
-                  <Input id="name" name="name" defaultValue={user?.name || ""} placeholder="Name" required autoComplete="name" className="border-white/30 bg-white/85 text-gray-900" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-white/80" htmlFor="email">
-                    Email
-                  </label>
-                  <Input id="email" value={user?.email || ""} disabled className="border-white/30 bg-white/70 text-gray-800" />
-                </div>
-              </div>
+          </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-white/80" htmlFor="phone">
-                    Phone
-                  </label>
-                  <Input id="phone" name="phone" defaultValue={user?.phone || ""} placeholder="Phone" autoComplete="tel" className="border-white/30 bg-white/85 text-gray-900" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-white/80" htmlFor="address">
-                    Address
-                  </label>
-                  <Input id="address" name="address" defaultValue={user?.address || ""} placeholder="Address" autoComplete="street-address" className="border-white/30 bg-white/85 text-gray-900" />
-                </div>
+          <form key={user?._id || "guest"} onSubmit={onSubmit} className="space-y-6 px-6 pb-6 sm:px-8 sm:pb-8">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label
+                  className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500"
+                  htmlFor="name"
+                >
+                  Name
+                </label>
+                <Input
+                  id="name"
+                  name="name"
+                  defaultValue={user?.name || ""}
+                  placeholder="Name"
+                  required
+                  autoComplete="name"
+                />
               </div>
-
-              {user?.role === "vendor" && (
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-white/80" htmlFor="shopName">
-                    Shop name
-                  </label>
-                  <Input id="shopName" name="shopName" defaultValue={user?.shopName || ""} placeholder="Shop name" className="border-white/30 bg-white/85 text-gray-900" />
-                </div>
-              )}
+              <div className="space-y-2">
+                <label
+                  className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500"
+                  htmlFor="email"
+                >
+                  Email
+                </label>
+                <Input id="email" value={user?.email || ""} disabled />
+              </div>
+            </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-white/80" htmlFor="theme">
-                  Profile card theme
-                </label>
-                <select
-                  id="theme"
-                  value={theme}
-                  onChange={(event) => setTheme(event.target.value)}
-                  className="w-full rounded-xl border border-white/30 bg-white/85 px-3 py-2 text-sm text-gray-900"
+                <label
+                  className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500"
+                  htmlFor="phone"
                 >
+                  Phone
+                </label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  defaultValue={user?.phone || ""}
+                  placeholder="Phone"
+                  autoComplete="tel"
+                />
+              </div>
+              <div className="space-y-2">
+                <label
+                  className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500"
+                  htmlFor="address"
+                >
+                  Address
+                </label>
+                <Input
+                  id="address"
+                  name="address"
+                  defaultValue={user?.address || ""}
+                  placeholder="Address"
+                  autoComplete="street-address"
+                />
+              </div>
+            </div>
+
+            {user?.role === "vendor" && (
+              <div className="space-y-2">
+                <label
+                  className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500"
+                  htmlFor="shopName"
+                >
+                  Shop name
+                </label>
+                <Input
+                  id="shopName"
+                  name="shopName"
+                  defaultValue={user?.shopName || ""}
+                  placeholder="Shop name"
+                />
+              </div>
+            )}
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label
+                  className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500"
+                  htmlFor="theme"
+                >
+                  Profile theme
+                </label>
+                <Select id="theme" value={theme} onChange={(event) => setTheme(event.target.value)}>
                   <option value="ocean">Ocean</option>
                   <option value="sunset">Sunset</option>
                   <option value="midnight">Midnight</option>
                   <option value="forest">Forest</option>
                   <option value="custom">Custom</option>
-                </select>
+                </Select>
               </div>
+
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-white/80" htmlFor="profileImage">
+                <label
+                  className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500"
+                  htmlFor="profileImage"
+                >
                   Profile photo
                 </label>
                 <input
@@ -199,9 +247,9 @@ setTimeout(() => {
                   type="file"
                   accept="image/*"
                   onChange={(event) => setProfileImageFile(event.target.files?.[0] || null)}
-                  className="w-full rounded-xl border border-white/30 bg-white/85 px-3 py-2 text-sm text-gray-900"
+                  className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-700"
                 />
-                <label className="inline-flex items-center gap-2 text-xs font-semibold text-white/90">
+                <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600">
                   <input
                     type="checkbox"
                     checked={removeProfileImage}
@@ -213,17 +261,20 @@ setTimeout(() => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-white/80" htmlFor="profileBackground">
-                Profile card wallpaper (transparent, meme, anything you like)
+              <label
+                className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500"
+                htmlFor="profileBackground"
+              >
+                Profile card wallpaper
               </label>
               <input
                 id="profileBackground"
                 type="file"
                 accept="image/*"
                 onChange={(event) => setProfileBackgroundFile(event.target.files?.[0] || null)}
-                className="w-full rounded-xl border border-white/30 bg-white/85 px-3 py-2 text-sm text-gray-900"
+                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-700"
               />
-              <label className="inline-flex items-center gap-2 text-xs font-semibold text-white/90">
+              <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600">
                 <input
                   type="checkbox"
                   checked={removeProfileBackground}
@@ -234,7 +285,10 @@ setTimeout(() => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-white/80" htmlFor="newPassword">
+              <label
+                className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500"
+                htmlFor="newPassword"
+              >
                 New password (optional)
               </label>
               <Input
@@ -244,20 +298,20 @@ setTimeout(() => {
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="••••••••"
                 autoComplete="new-password"
-                className="border-white/30 bg-white/85 text-gray-900"
               />
             </div>
 
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs font-semibold text-white/90">
-                Personalize your card with themes, profile photos, and custom wallpapers.
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs font-semibold text-slate-500">
+                Account visuals and profile info are saved together.
               </p>
               <Button type="submit" disabled={loading}>
                 {loading ? "Saving..." : "Save profile"}
               </Button>
             </div>
-            </form>
-      </div>
+          </form>
+        </CardBody>
+      </Card>
     </section>
   );
 }

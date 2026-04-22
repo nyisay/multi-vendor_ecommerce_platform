@@ -84,7 +84,7 @@ export default function CartPage() {
         title="Cart"
         description="Review items before checkout."
         right={
-          <Link to="/products" className="text-sm font-semibold text-gray-800 hover:text-[#7A8B99]">
+          <Link to="/products" className="text-sm font-semibold text-gray-800 hover:text-blue-700">
             Continue shopping
           </Link>
         }

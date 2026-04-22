@@ -53,26 +53,28 @@ export default function AdminVendorsPage() {
   };
 
   return (
-    <section className="grid gap-4 lg:grid-cols-[240px_1fr]">
+    <section className="grid gap-5 lg:grid-cols-[250px_1fr]">
       <DashboardSidebar role="admin" />
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900">Manage Vendors</h1>
+        <h1 className="text-3xl font-black tracking-tight text-slate-900">Manage Vendors</h1>
         {loading ? (
-          <p className="text-sm text-gray-600">Loading vendors...</p>
+          <p className="text-sm font-semibold text-slate-600">Loading vendors...</p>
         ) : (
           <div className="space-y-3">
             {vendors.map((vendor) => (
-              <article key={vendor._id} className="rounded-xl bg-white p-4 shadow-sm">
-                <p className="font-semibold text-gray-900">{vendor.name}</p>
-                <p className="text-sm text-gray-600">{vendor.email}</p>
-                <p className="text-sm text-gray-600">Status: {vendor.vendorStatus}</p>
-                <div className="mt-2 flex gap-2">
+              <article key={vendor._id} className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.35)]">
+                <p className="text-lg font-bold tracking-tight text-slate-900">{vendor.name}</p>
+                <p className="text-sm text-slate-600">{vendor.email}</p>
+                <p className="mt-1 text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
+                  Status: {vendor.vendorStatus}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
                   {["approved", "rejected", "pending"].map((status) => (
                     <button
                       key={status}
                       type="button"
                       onClick={() => setStatus(vendor._id, status)}
-                      className="rounded border border-gray-300 px-2 py-1 text-xs"
+                      className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
                     >
                       {status}
                     </button>
@@ -80,7 +82,7 @@ export default function AdminVendorsPage() {
                 </div>
               </article>
             ))}
-            {!vendors.length && <p className="text-sm text-gray-600">No vendors found.</p>}
+            {!vendors.length && <p className="text-sm font-medium text-slate-600">No vendors found.</p>}
           </div>
         )}
       </div>

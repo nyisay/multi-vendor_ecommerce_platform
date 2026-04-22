@@ -9,8 +9,10 @@ function NavItem({ to, children }) {
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `rounded-full px-4 py-2 text-sm font-semibold transition ${
-          isActive ? "bg-[#91ADC2] text-white" : "text-gray-800 hover:bg-white/60"
+        `rounded-full px-4 py-2 text-sm font-semibold tracking-tight transition ${
+          isActive
+            ? "bg-blue-700 text-white shadow-sm"
+            : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
         }`
       }
     >
@@ -27,33 +29,38 @@ export default function AppLayout() {
   const closeMobile = () => setMobileOpen(false);
 
   return (
-    <div className="min-h-screen bg-[#A9DDD6] text-gray-900">
-      <header className="sticky top-0 z-50 border-b border-white/50 bg-[#A9DDD6]/70 backdrop-blur">
-        <div className="border-b border-gray-100">
-          <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-2 text-xs text-gray-600">
-            <p className="hidden sm:block">Shop across trusted sellers</p>
+    <div className="min-h-screen text-slate-900">
+      <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl">
+        <div className="border-b border-slate-200/80 bg-slate-50/75">
+          <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-2 text-xs">
+            <p className="hidden font-semibold text-slate-500 sm:block">
+              Trusted multi-vendor marketplace for everyday shopping
+            </p>
             <div className="flex items-center gap-2">
               {isAuthenticated ? (
                 <>
-                  <span className="rounded-full bg-gray-100 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-gray-800">
+                  <span className="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.08em] text-blue-700">
                     {user?.role}
                   </span>
                   <button
                     type="button"
                     onClick={logout}
-                    className="rounded-full px-3 py-1.5 text-[11px] font-semibold text-gray-700 transition hover:bg-gray-100"
+                    className="rounded-full px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-200 hover:text-slate-900"
                   >
                     Logout
                   </button>
                 </>
               ) : (
                 <>
-                  <Link to="/login" className="rounded-full px-3 py-1.5 text-[11px] font-semibold text-gray-700 transition hover:bg-gray-100">
+                  <Link
+                    to="/login"
+                    className="rounded-full px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-200 hover:text-slate-900"
+                  >
                     Sign in
                   </Link>
                   <Link
                     to="/register"
-                    className="rounded-full bg-[#91ADC2] px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-[#9BA0BC]"
+                    className="rounded-full bg-blue-700 px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-blue-800"
                   >
                     Create account
                   </Link>
@@ -63,14 +70,12 @@ export default function AppLayout() {
           </div>
         </div>
 
-        <div className="mx-auto grid w-full max-w-7xl grid-cols-[1fr_auto] items-center px-4 py-3 md:grid-cols-[1fr_auto_1fr]">
-          <Link to="/" className="flex items-center gap-2">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-cyan-600 text-sm font-black text-white">
-              X
+        <div className="mx-auto grid w-full max-w-7xl grid-cols-[1fr_auto] items-center px-4 py-4 md:grid-cols-[1fr_auto_1fr]">
+          <Link to="/" className="flex items-center gap-3">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-sm font-black text-white">
+              MV
             </span>
-            <span className="text-sm font-mono tracking-tight text-gray-900 sm:text-base">
-              Matrix
-            </span>
+            <span className="text-base font-bold tracking-tight text-slate-900 sm:text-lg">MultiVendor</span>
           </Link>
 
           <nav className="hidden items-center justify-center gap-1 md:flex">
@@ -87,28 +92,33 @@ export default function AppLayout() {
             >
               <NavItem to="/products">Products</NavItem>
               <div
-                className={`absolute left-1/2 top-full z-50 w-[min(92vw,900px)] -translate-x-1/2 pt-3 transition-all duration-200 ${
-                  productsMenuOpen ? "visible opacity-100" : "invisible opacity-0"
+                className={`absolute left-1/2 top-full z-50 w-[min(92vw,920px)] -translate-x-1/2 pt-3 transition-all duration-200 ${
+                  productsMenuOpen
+                    ? "visible translate-y-0 opacity-100"
+                    : "invisible -translate-y-2 opacity-0"
                 }`}
               >
-                <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-xl">
-                  <div className="mb-4 flex items-center justify-between">
-                    <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_24px_48px_-26px_rgba(15,23,42,0.35)]">
+                  <div className="mb-5 flex items-center justify-between">
+                    <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-slate-500">
                       Shop by category
                     </p>
                     <Link
                       to="/products"
-                      className="text-xs font-semibold text-gray-700 transition hover:text-gray-900"
+                      className="text-xs font-semibold text-blue-700 transition hover:text-blue-800"
                     >
                       View all products
                     </Link>
                   </div>
                   <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">
                     {PRODUCT_MENU_GROUPS.map((group) => (
-                      <div key={group.title} className="rounded-2xl bg-gray-50 p-4">
+                      <div
+                        key={group.title}
+                        className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4"
+                      >
                         <Link
                           to={`/products?q=${encodeURIComponent(group.title)}`}
-                          className="text-sm font-extrabold tracking-tight text-gray-900 hover:underline"
+                          className="text-sm font-extrabold tracking-tight text-slate-900 hover:text-blue-700"
                         >
                           {group.title}
                         </Link>
@@ -117,7 +127,7 @@ export default function AppLayout() {
                             <Link
                               key={item}
                               to={`/products?q=${encodeURIComponent(item)}`}
-                              className="text-xs font-semibold text-gray-600 transition hover:text-gray-900"
+                              className="text-xs font-semibold text-slate-600 transition hover:text-slate-900"
                             >
                               {item}
                             </Link>
@@ -141,7 +151,7 @@ export default function AppLayout() {
               type="button"
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileOpen}
-              className="rounded-full border border-white/60 bg-white/40 px-4 py-2 text-sm font-semibold text-gray-800 transition hover:bg-white/60 md:hidden"
+              className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition hover:border-slate-400 hover:bg-slate-50 md:hidden"
               onClick={() => setMobileOpen((prev) => !prev)}
             >
               Menu
@@ -149,17 +159,14 @@ export default function AppLayout() {
           </div>
         </div>
 
-        <div
-          className={`md:hidden ${mobileOpen ? "block" : "hidden"}`}
-          aria-hidden={!mobileOpen}
-        >
-          <div className="border-t border-white/60 bg-[#A9DDD6]">
+        <div className={`md:hidden ${mobileOpen ? "block" : "hidden"}`} aria-hidden={!mobileOpen}>
+          <div className="border-t border-slate-200 bg-white">
             <div className="mx-auto w-full max-w-7xl px-4 py-4">
               <div className="grid gap-2">
                 <NavLink
                   onClick={closeMobile}
                   to="/products"
-                  className="rounded-xl px-4 py-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-50"
+                  className="rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
                 >
                   Products
                 </NavLink>
@@ -167,7 +174,7 @@ export default function AppLayout() {
                   <NavLink
                     onClick={closeMobile}
                     to="/profile"
-                    className="rounded-xl px-4 py-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-50"
+                    className="rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
                   >
                     Account
                   </NavLink>
@@ -177,14 +184,14 @@ export default function AppLayout() {
                     <NavLink
                       onClick={closeMobile}
                       to="/cart"
-                      className="rounded-xl px-4 py-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-50"
+                      className="rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
                     >
                       Cart
                     </NavLink>
                     <NavLink
                       onClick={closeMobile}
                       to="/orders"
-                      className="rounded-xl px-4 py-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-50"
+                      className="rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
                     >
                       Orders
                     </NavLink>
@@ -194,7 +201,7 @@ export default function AppLayout() {
                   <NavLink
                     onClick={closeMobile}
                     to="/vendor/dashboard"
-                    className="rounded-xl px-4 py-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-50"
+                    className="rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
                   >
                     Vendor Panel
                   </NavLink>
@@ -203,7 +210,7 @@ export default function AppLayout() {
                   <NavLink
                     onClick={closeMobile}
                     to="/admin/dashboard"
-                    className="rounded-xl px-4 py-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-50"
+                    className="rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
                   >
                     Admin Panel
                   </NavLink>
@@ -217,7 +224,7 @@ export default function AppLayout() {
                     logout();
                     closeMobile();
                   }}
-                  className="mt-4 w-full rounded-xl bg-[#9BA0BC] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#7A8B99]"
+                  className="mt-4 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                 >
                   Logout
                 </button>
@@ -227,14 +234,14 @@ export default function AppLayout() {
                   <Link
                     onClick={closeMobile}
                     to="/login"
-                    className="rounded-xl border border-gray-200 px-4 py-3 text-center text-sm font-semibold text-gray-900 transition hover:bg-gray-50"
+                    className="rounded-xl border border-slate-300 px-4 py-3 text-center text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
                   >
                     Sign in
                   </Link>
                   <Link
                     onClick={closeMobile}
                     to="/register"
-                    className="rounded-xl bg-[#91ADC2] px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-[#9BA0BC]"
+                    className="rounded-xl bg-blue-700 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-blue-800"
                   >
                     Create account
                   </Link>
@@ -245,7 +252,7 @@ export default function AppLayout() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-7xl px-4 py-10">
+      <main className="mx-auto w-full max-w-7xl px-4 py-10 lg:py-12">
         <Outlet />
       </main>
       <Footer />

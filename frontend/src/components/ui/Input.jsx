@@ -4,7 +4,7 @@ export default function Input({ className = "", ...props }) {
   return (
     <input
       className={cx(
-        "w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-900 shadow-sm outline-none transition placeholder:font-medium placeholder:text-gray-400 focus:border-[#91ADC2]/55 focus:ring-2 focus:ring-[#91ADC2]/25 disabled:cursor-not-allowed disabled:bg-gray-50",
+        "w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:bg-slate-100",
         className,
       )}
       {...props}

@@ -107,7 +107,7 @@ export default function ProductsPage() {
           <h1 className="text-3xl font-black tracking-tight text-gray-950 sm:text-4xl">Shop</h1>
           <p className="mt-1 text-sm text-gray-600">Browse products from your marketplace vendors.</p>
         </div>
-        <Link to="/" className="text-sm font-semibold text-gray-800 hover:text-[#7A8B99]">
+        <Link to="/" className="text-sm font-semibold text-gray-800 hover:text-blue-700">
           Back to home
         </Link>
       </header>

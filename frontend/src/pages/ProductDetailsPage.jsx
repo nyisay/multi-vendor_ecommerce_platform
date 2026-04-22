@@ -47,7 +47,7 @@ export default function ProductDetailsPage() {
   return (
     <section className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link to="/products" className="text-sm font-semibold text-gray-800 hover:text-[#7A8B99]">
+        <Link to="/products" className="text-sm font-semibold text-gray-800 hover:text-blue-700">
           ← Back to shop
         </Link>
         <div className="flex flex-wrap items-center gap-2">
@@ -135,15 +135,15 @@ export default function ProductDetailsPage() {
                   <p className="text-xs font-extrabold uppercase tracking-widest text-gray-500">Why shop here</p>
                   <ul className="space-y-2 text-sm text-gray-700">
                     <li className="flex gap-2">
-                      <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-[#91ADC2]" />
+                      <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-blue-600" />
                       Secure checkout experience
                     </li>
                     <li className="flex gap-2">
-                      <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-[#91ADC2]" />
+                      <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-blue-600" />
                       Multi-vendor marketplace structure
                     </li>
                     <li className="flex gap-2">
-                      <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-[#91ADC2]" />
+                      <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-blue-600" />
                       Reliable support for every order
                     </li>
                   </ul>

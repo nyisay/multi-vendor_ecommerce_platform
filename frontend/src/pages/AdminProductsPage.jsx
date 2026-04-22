@@ -53,43 +53,43 @@ export default function AdminProductsPage() {
   };
 
   return (
-    <section className="grid gap-4 lg:grid-cols-[240px_1fr]">
+    <section className="grid gap-5 lg:grid-cols-[250px_1fr]">
       <DashboardSidebar role="admin" />
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900">Manage Products</h1>
+        <h1 className="text-3xl font-black tracking-tight text-slate-900">Manage Products</h1>
         {loading ? (
-          <p className="text-sm text-gray-600">Loading products...</p>
+          <p className="text-sm font-semibold text-slate-600">Loading products...</p>
         ) : (
           <div className="space-y-3">
             {products.map((product) => (
-              <article key={product._id} className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
+              <article key={product._id} className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.35)]">
                 <div className="flex items-center gap-3">
                   {product.imageUrl ? (
                     <img
                       src={getImageUrl(product.imageUrl)}
                       alt={product.name}
-                      className="h-14 w-14 rounded object-cover"
+                      className="h-14 w-14 rounded-xl object-cover"
                     />
                   ) : (
-                    <div className="h-14 w-14 rounded bg-gray-200" />
+                    <div className="h-14 w-14 rounded-xl bg-slate-200" />
                   )}
                   <div>
-                  <p className="font-semibold text-gray-900">{product.name}</p>
-                  <p className="text-sm text-gray-600">
-                    {product.categoryId?.name} | Vendor: {product.vendorId?.name}
-                  </p>
+                    <p className="font-semibold text-slate-900">{product.name}</p>
+                    <p className="text-sm text-slate-600">
+                      {product.categoryId?.name} | Vendor: {product.vendorId?.name}
+                    </p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => removeProduct(product._id)}
-                  className="rounded bg-red-600 px-3 py-2 text-sm font-semibold text-white"
+                  className="rounded-lg bg-red-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-red-800"
                 >
                   Delete
                 </button>
               </article>
             ))}
-            {!products.length && <p className="text-sm text-gray-600">No products found.</p>}
+            {!products.length && <p className="text-sm font-medium text-slate-600">No products found.</p>}
           </div>
         )}
       </div>
