@@ -160,6 +160,99 @@ describe("product reviews", () => {
   });
 });
 
+describe("product catalog filters", () => {
+  it("supports advanced filtering and returns discovery metadata", async () => {
+    const category = await Category.create({ name: `Audio ${Date.now()}` });
+    const vendorA = await User.create({
+      name: "Filter Vendor A",
+      email: `vendor-a-${Date.now()}@example.com`,
+      password: "password123",
+      role: "vendor",
+      vendorStatus: "approved"
+    });
+    const vendorB = await User.create({
+      name: "Filter Vendor B",
+      email: `vendor-b-${Date.now()}@example.com`,
+      password: "password123",
+      role: "vendor",
+      vendorStatus: "approved"
+    });
+
+    await Product.create({
+      name: "Alpha Headphones",
+      price: 120,
+      description: "Wireless over-ear audio",
+      stock: 5,
+      vendorId: vendorA._id,
+      categoryId: category._id,
+      averageRating: 4.4
+    });
+
+    await Product.create({
+      name: "Budget Headphones",
+      price: 60,
+      description: "Entry-level audio",
+      stock: 10,
+      vendorId: vendorA._id,
+      categoryId: category._id,
+      averageRating: 2.8
+    });
+
+    await Product.create({
+      name: "Studio Headphones",
+      price: 180,
+      description: "Premium audio monitoring",
+      stock: 7,
+      vendorId: vendorB._id,
+      categoryId: category._id,
+      averageRating: 4.8
+    });
+
+    await Product.create({
+      name: "Archived Headphones",
+      price: 140,
+      description: "Out of stock audio gear",
+      stock: 0,
+      vendorId: vendorB._id,
+      categoryId: category._id,
+      averageRating: 4.5
+    });
+
+    const response = await request(app)
+      .get("/api/products")
+      .query({
+        category: category._id.toString(),
+        q: "head",
+        vendor: vendorA._id.toString(),
+        minRating: 4,
+        stockStatus: "in_stock",
+        minPrice: 100,
+        maxPrice: 150,
+        sortBy: "rating_desc"
+      });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.items).toHaveLength(1);
+    expect(response.body.items[0].name).toBe("Alpha Headphones");
+    expect(response.body.pagination.total).toBe(1);
+    expect(response.body.filters.priceRange).toEqual({ min: 120, max: 180 });
+    expect(response.body.filters.vendors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: String(vendorA._id),
+          name: "Filter Vendor A",
+          productCount: 1
+        }),
+        expect.objectContaining({
+          id: String(vendorB._id),
+          name: "Filter Vendor B",
+          productCount: 1
+        })
+      ])
+    );
+  });
+});
+
 describe("wishlist", () => {
   it("allows a customer to add and retrieve wishlist items", async () => {
     const { customer, product } = await seedReviewFixture();

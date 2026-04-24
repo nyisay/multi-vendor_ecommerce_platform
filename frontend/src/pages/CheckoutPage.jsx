@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
+import { useToast } from "../context/useToast";
+import Button from "../components/ui/Button";
+import Badge from "../components/ui/Badge";
+import Input from "../components/ui/Input";
+import { Card, CardBody } from "../components/ui/Card";
+import { SectionHeading } from "../components/ui/Section";
 import { cartApi, orderApi } from "../services/api";
 import {
   calculateCheckoutTotals,
@@ -9,12 +15,6 @@ import {
   getInitialCheckoutForm,
   PAYMENT_METHOD_OPTIONS,
 } from "../services/checkout";
-import { useToast } from "../context/useToast";
-import Button from "../components/ui/Button";
-import Badge from "../components/ui/Badge";
-import Input from "../components/ui/Input";
-import { Card, CardBody } from "../components/ui/Card";
-import { SectionHeading } from "../components/ui/Section";
 
 const REQUIRED_FIELDS = [
   ["fullName", "full name"],
@@ -26,58 +26,27 @@ const REQUIRED_FIELDS = [
   ["country", "country"],
 ];
 
-export default function CheckoutPage() {
-  const navigate = useNavigate();
-  const { user, refreshProfile } = useAuth();
-  const { showToast } = useToast();
-  const [cart, setCart] = useState(null);
-  const [form, setForm] = useState(() => getInitialCheckoutForm(user));
-  const [loading, setLoading] = useState(true);
+function CheckoutFormContent({
+  initialForm,
+  cart,
+  loadError,
+  refreshProfile,
+  showToast,
+  onBack,
+  onCheckoutComplete,
+}) {
+  const [form, setForm] = useState(initialForm);
   const [placing, setPlacing] = useState(false);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    setForm(getInitialCheckoutForm(user));
-  }, [
-    user?._id,
-    user?.name,
-    user?.phone,
-    user?.address,
-    user?.defaultPaymentMethod,
-    user?.defaultShippingAddress?.fullName,
-    user?.defaultShippingAddress?.phone,
-    user?.defaultShippingAddress?.addressLine1,
-    user?.defaultShippingAddress?.addressLine2,
-    user?.defaultShippingAddress?.city,
-    user?.defaultShippingAddress?.state,
-    user?.defaultShippingAddress?.postalCode,
-    user?.defaultShippingAddress?.country,
-  ]);
-
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const data = await cartApi.get();
-        setCart(data);
-      } catch (err) {
-        setError(err.message || "Failed to load checkout");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+  const [submitError, setSubmitError] = useState("");
 
   const totals = useMemo(
     () => calculateCheckoutTotals(cart?.items || [], form.deliveryMethod),
     [cart?.items, form.deliveryMethod],
   );
 
-  const selectedPaymentOption =
-    PAYMENT_METHOD_OPTIONS.find((option) => option.value === form.paymentMethod) ||
-    PAYMENT_METHOD_OPTIONS[0];
+  const missingFields = REQUIRED_FIELDS.filter(([key]) => !String(form[key] || "").trim()).map(
+    ([, label]) => label,
+  );
 
   const onFieldChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -86,10 +55,6 @@ export default function CheckoutPage() {
       [name]: type === "checkbox" ? checked : value,
     }));
   };
-
-  const missingFields = REQUIRED_FIELDS.filter(([key]) => !String(form[key] || "").trim()).map(
-    ([, label]) => label,
-  );
 
   const handleCheckout = async () => {
     if (!cart?.items?.length) {
@@ -103,7 +68,7 @@ export default function CheckoutPage() {
     }
 
     setPlacing(true);
-    setError("");
+    setSubmitError("");
 
     try {
       const order = await orderApi.create({
@@ -133,17 +98,13 @@ export default function CheckoutPage() {
           : "Order placed successfully",
         "success",
       );
-      navigate("/orders");
+      onCheckoutComplete();
     } catch (err) {
-      setError(err.message || "Could not place order");
+      setSubmitError(err.message || "Could not place order");
     } finally {
       setPlacing(false);
     }
   };
-
-  if (loading) {
-    return <p className="text-sm font-medium text-slate-600">Loading checkout...</p>;
-  }
 
   return (
     <section className="space-y-6">
@@ -153,7 +114,7 @@ export default function CheckoutPage() {
         right={
           <button
             type="button"
-            onClick={() => navigate("/cart")}
+            onClick={onBack}
             className="text-sm font-semibold text-slate-700 transition hover:text-amber-700"
           >
             ← Back to cart
@@ -161,9 +122,9 @@ export default function CheckoutPage() {
         }
       />
 
-      {error && (
+      {(loadError || submitError) && (
         <p className="rounded-xl border border-red-200 bg-[linear-gradient(180deg,_#fff1f2_0%,_#ffffff_100%)] px-4 py-3 text-sm font-semibold text-red-700">
-          {error}
+          {submitError || loadError}
         </p>
       )}
 
@@ -407,6 +368,7 @@ export default function CheckoutPage() {
                 {(cart?.items || []).map((item) => {
                   const unitPrice = Number(item.productId?.price || 0);
                   const lineTotal = unitPrice * Number(item.quantity || 0);
+
                   return (
                     <div
                       key={item._id}
@@ -420,7 +382,9 @@ export default function CheckoutPage() {
                           Qty {item.quantity} · Unit ${unitPrice.toFixed(2)}
                         </p>
                       </div>
-                      <p className="text-sm font-black text-slate-900">${lineTotal.toFixed(2)}</p>
+                      <p className="text-sm font-black text-slate-900">
+                        ${lineTotal.toFixed(2)}
+                      </p>
                     </div>
                   );
                 })}
@@ -503,5 +467,66 @@ export default function CheckoutPage() {
         </div>
       </div>
     </section>
+  );
+}
+
+export default function CheckoutPage() {
+  const navigate = useNavigate();
+  const { user, refreshProfile } = useAuth();
+  const { showToast } = useToast();
+  const [cart, setCart] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const formResetKey = [
+    user?._id || "guest",
+    user?.name || "",
+    user?.phone || "",
+    user?.address || "",
+    user?.defaultPaymentMethod || "",
+    user?.defaultShippingAddress?.fullName || "",
+    user?.defaultShippingAddress?.phone || "",
+    user?.defaultShippingAddress?.addressLine1 || "",
+    user?.defaultShippingAddress?.addressLine2 || "",
+    user?.defaultShippingAddress?.city || "",
+    user?.defaultShippingAddress?.state || "",
+    user?.defaultShippingAddress?.postalCode || "",
+    user?.defaultShippingAddress?.country || "",
+  ].join("|");
+
+  const initialForm = getInitialCheckoutForm(user);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const data = await cartApi.get();
+        setCart(data);
+      } catch (err) {
+        setError(err.message || "Failed to load checkout");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, []);
+
+  if (loading) {
+    return <p className="text-sm font-medium text-slate-600">Loading checkout...</p>;
+  }
+
+  return (
+    <CheckoutFormContent
+      key={formResetKey}
+      initialForm={initialForm}
+      cart={cart}
+      loadError={error}
+      refreshProfile={refreshProfile}
+      showToast={showToast}
+      onBack={() => navigate("/cart")}
+      onCheckoutComplete={() => navigate("/orders")}
+    />
   );
 }

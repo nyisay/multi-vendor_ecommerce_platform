@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import DashboardSidebar from "../components/DashboardSidebar";
 import { orderApi } from "../services/api";
 
@@ -45,6 +46,19 @@ export default function AdminDashboardPage() {
     { label: "Products", value: analytics.totalProducts },
   ];
 
+  const workspaceViews = [
+    {
+      title: "Strategic dashboard",
+      description: "Read long-range growth, vendor quality, and category direction in one polished view.",
+      to: "/admin/strategic-dashboard",
+    },
+    {
+      title: "Marketing dashboard",
+      description: "Review campaign focus, audience energy, and merchandising momentum.",
+      to: "/admin/marketing-dashboard",
+    },
+  ];
+
   return (
     <section className="grid gap-5 lg:grid-cols-[250px_1fr]">
       <DashboardSidebar role="admin" />
@@ -64,6 +78,23 @@ export default function AdminDashboardPage() {
               <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500">{card.label}</p>
               <p className="mt-2 text-3xl font-black tracking-tight text-slate-950">{card.value}</p>
             </article>
+          ))}
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          {workspaceViews.map((view, index) => (
+            <Link
+              key={view.title}
+              to={view.to}
+              className={`rounded-[1.7rem] border p-5 shadow-[0_18px_48px_-40px_rgba(15,23,42,0.28)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_60px_-40px_rgba(15,23,42,0.35)] ${
+                index === 0
+                  ? "border-amber-200 bg-[linear-gradient(180deg,_#fffaf0_0%,_#ffffff_100%)]"
+                  : "border-rose-200 bg-[linear-gradient(180deg,_#fff1f2_0%,_#ffffff_100%)]"
+              }`}
+            >
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Expanded view</p>
+              <h2 className="mt-2 text-xl font-black tracking-tight text-slate-950">{view.title}</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{view.description}</p>
+            </Link>
           ))}
         </div>
       </div>

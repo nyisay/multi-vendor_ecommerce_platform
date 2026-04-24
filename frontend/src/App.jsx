@@ -3,8 +3,10 @@ import AppLayout from "./components/AppLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./context/useAuth";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
+import AdminMarketingDashboardPage from "./pages/AdminMarketingDashboardPage";
 import AdminOrdersPage from "./pages/AdminOrdersPage";
 import AdminProductsPage from "./pages/AdminProductsPage";
+import AdminStrategicDashboardPage from "./pages/AdminStrategicDashboardPage";
 import AdminCategoriesPage from "./pages/AdminCategoriesPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminVendorsPage from "./pages/AdminVendorsPage";
@@ -24,6 +26,7 @@ import RegisterPage from "./pages/RegisterPage";
 import TermsPage from "./pages/TermsPage";
 import VendorDashboardPage from "./pages/VendorDashboardPage";
 import VendorOrdersPage from "./pages/VendorOrdersPage";
+import VendorOperationalDashboardPage from "./pages/VendorOperationalDashboardPage";
 import VendorProductsPage from "./pages/VendorProductsPage";
 import WishlistPage from "./pages/WishlistPage";
 
@@ -122,6 +125,15 @@ function App() {
         />
 
         <Route
+          path="vendor/operational-dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["vendor"]}>
+              <VendorOperationalDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="vendor/orders"
           element={
             <ProtectedRoute allowedRoles={["vendor"]}>
@@ -135,6 +147,24 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["admin"]}>
               <AdminDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="admin/strategic-dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AdminStrategicDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="admin/marketing-dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AdminMarketingDashboardPage />
             </ProtectedRoute>
           }
         />

@@ -202,7 +202,7 @@ export default function WishlistPage() {
               Your wishlist is empty
             </p>
             <p className="text-sm leading-7 text-slate-600">
-              Save products while browsing so you can compare them later without
+              Save products while browsing so you can revisit them later without
               interrupting the rest of your shopping flow.
             </p>
             <div className="pt-2">

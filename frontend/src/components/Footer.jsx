@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
+import BrandLogo from "./BrandLogo";
 
 function SocialIcon({ platform, className = "" }) {
   if (platform === "x") {
@@ -71,30 +72,48 @@ export default function Footer() {
         ? [
             { label: "Profile", to: "/profile" },
             { label: "Vendor dashboard", to: "/vendor/dashboard" },
+            { label: "Operational dashboard", to: "/vendor/operational-dashboard" },
             { label: "Manage products", to: "/vendor/products" },
             { label: "Vendor orders", to: "/vendor/orders" },
           ]
         : [
             { label: "Profile", to: "/profile" },
             { label: "Admin dashboard", to: "/admin/dashboard" },
+            { label: "Strategic dashboard", to: "/admin/strategic-dashboard" },
+            { label: "Marketing dashboard", to: "/admin/marketing-dashboard" },
             { label: "Admin products", to: "/admin/products" },
             { label: "Admin orders", to: "/admin/orders" },
           ];
 
-  const workspaceTitle = user?.role === "vendor" ? "Vendors" : user?.role === "admin" ? "Admin" : "Marketplace";
+  const workspaceTitle =
+    user?.role === "vendor"
+      ? "Vendors"
+      : user?.role === "admin"
+        ? "Admin"
+        : user?.role === "customer"
+          ? "Customer"
+          : "Marketplace";
   const workspaceLinks =
     user?.role === "vendor"
       ? [
           { label: "Vendor dashboard", to: "/vendor/dashboard" },
+          { label: "Operational dashboard", to: "/vendor/operational-dashboard" },
           { label: "Manage products", to: "/vendor/products" },
           { label: "Vendor orders", to: "/vendor/orders" },
         ]
       : user?.role === "admin"
         ? [
             { label: "Admin dashboard", to: "/admin/dashboard" },
+            { label: "Strategic dashboard", to: "/admin/strategic-dashboard" },
+            { label: "Marketing dashboard", to: "/admin/marketing-dashboard" },
             { label: "Manage users", to: "/admin/users" },
             { label: "Manage vendors", to: "/admin/vendors" },
           ]
+        : user?.role === "customer"
+          ? [
+              { label: "Orders", to: "/orders" },
+              { label: "Wishlist", to: "/wishlist" },
+            ]
         : [
             { label: "About marketplace", to: "/about" },
             { label: "Accessibility", to: "/accessibility" },
@@ -106,18 +125,15 @@ export default function Footer() {
       <div className="mx-auto w-full max-w-7xl px-4 py-14">
         <div className="grid gap-10 md:grid-cols-12">
           <div className="space-y-4 md:col-span-4">
-            <div className="flex items-center gap-3">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-amber-300 text-sm font-black text-slate-950 shadow-[0_18px_35px_-22px_rgba(251,191,36,0.8)]">
-                MV
-              </span>
-              <div>
-                <p className="text-sm font-extrabold tracking-tight">MultiVendor</p>
-                <p className="text-xs text-slate-300">Built for multi-vendor commerce</p>
-              </div>
-            </div>
+            <BrandLogo
+              markClassName="h-10 w-10"
+              nameClassName="text-sm text-white"
+              taglineClassName="text-xs text-slate-300"
+              tagline="Whisker-approved marketplace"
+            />
             <p className="max-w-sm text-sm text-slate-300">
-              A modern commerce workspace connecting customers, vendors, and admins with one
-              clean marketplace experience.
+              PawsieMart is a modern commerce workspace connecting customers, vendors,
+              and admins through one playful, polished marketplace experience.
             </p>
             <div className="flex flex-wrap items-center gap-2 pt-1">
               {SOCIAL_LINKS.map((item) => (
@@ -208,7 +224,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-slate-300 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} MultiVendor. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} PawsieMart. All rights reserved.</p>
           <div className="flex flex-wrap gap-x-4 gap-y-2">
             <Link to="/terms" className="transition hover:text-amber-200">
               Terms

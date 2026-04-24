@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { PRODUCT_MENU_GROUPS } from "../data/productMegaMenu";
+import BrandLogo from "./BrandLogo";
 import Footer from "./Footer";
 
 const MENU_SURFACES = [
@@ -20,13 +21,47 @@ function NavItem({ to, children }) {
       className={({ isActive }) =>
         `rounded-full px-4 py-2.5 text-sm font-semibold tracking-tight transition ${
           isActive
-            ? "bg-amber-300 text-slate-950 shadow-[0_14px_30px_-18px_rgba(251,191,36,0.85)]"
-            : "text-slate-700 hover:bg-slate-100 hover:text-slate-950"
+            ? "!bg-amber-200 text-slate-950 shadow-[0_14px_30px_-18px_rgba(251,191,36,0.85)]"
+            : "!text-white hover:bg-white/10 hover:text-green-500"
         }`
       }
     >
       {children}
     </NavLink>
+  );
+}
+
+function SearchForm({
+  initialValue,
+  onSubmit,
+  wrapperClassName,
+  containerClassName,
+  inputClassName,
+  buttonClassName,
+}) {
+  const [value, setValue] = useState(initialValue);
+
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSubmit(value);
+      }}
+      className={wrapperClassName}
+    >
+      <div className={containerClassName}>
+        <input
+          type="search"
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+          placeholder="Search products..."
+          className={inputClassName}
+        />
+        <button type="submit" className={buttonClassName}>
+          Search
+        </button>
+      </div>
+    </form>
   );
 }
 
@@ -36,76 +71,68 @@ export default function AppLayout() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [productsMenuOpen, setProductsMenuOpen] = useState(false);
-  const [searchInput, setSearchInput] = useState("");
 
   const closeMobile = () => setMobileOpen(false);
   const closeProductsMenu = () => setProductsMenuOpen(false);
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    if (location.pathname.startsWith("/products")) {
-      setSearchInput(params.get("q") || "");
-      return;
-    }
-
-    setSearchInput("");
-  }, [location.pathname, location.search]);
+  const routeSearchQuery = location.pathname.startsWith("/products")
+    ? new URLSearchParams(location.search).get("q") || ""
+    : "";
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const query = params.get("q");
-    let title = "MultiVendor";
-    let description = "Trusted multi-vendor marketplace for everyday shopping.";
+    let title = "PawsieMart";
+    let description = "Whisker-approved marketplace for curated finds and everyday shopping.";
 
     if (location.pathname === "/") {
-      title = "MultiVendor | Home";
+      title = "PawsieMart | Home";
       description =
-        "Browse products from multiple vendors in one cleaner marketplace experience.";
+        "Browse curated products from multiple vendors in one cozy, cat-inspired marketplace.";
     } else if (location.pathname === "/products") {
-      title = query ? `${query} | Products | MultiVendor` : "Products | MultiVendor";
-      description = "Search, filter, and browse products across the marketplace.";
+      title = query ? `${query} | Products | PawsieMart` : "Products | PawsieMart";
+      description = "Search, filter, sort, and browse products across PawsieMart.";
     } else if (location.pathname.startsWith("/products/")) {
-      title = "Product Details | MultiVendor";
+      title = "Product Details | PawsieMart";
       description = "View product details, reviews, pricing, and purchase options.";
     } else if (location.pathname === "/cart") {
-      title = "Your Cart | MultiVendor";
+      title = "Your Cart | PawsieMart";
       description = "Review selected items and continue to checkout.";
     } else if (location.pathname === "/checkout") {
-      title = "Checkout | MultiVendor";
+      title = "Checkout | PawsieMart";
       description = "Confirm shipping details, payment method, and place your order.";
     } else if (location.pathname === "/orders") {
-      title = "Orders | MultiVendor";
+      title = "Orders | PawsieMart";
       description = "Track, review, and manage your orders.";
     } else if (location.pathname === "/wishlist") {
-      title = "Wishlist | MultiVendor";
+      title = "Wishlist | PawsieMart";
       description = "Saved products you want to revisit later.";
     } else if (location.pathname === "/profile") {
-      title = "Profile | MultiVendor";
+      title = "Profile | PawsieMart";
       description = "Manage your account details and shopping preferences.";
     } else if (location.pathname.startsWith("/vendor/")) {
-      title = "Vendor Workspace | MultiVendor";
+      title = "Vendor Workspace | PawsieMart";
       description = "Manage products, orders, and storefront activity.";
     } else if (location.pathname.startsWith("/admin/")) {
-      title = "Admin Dashboard | MultiVendor";
+      title = "Admin Dashboard | PawsieMart";
       description = "Review marketplace activity, users, products, and orders.";
     } else if (location.pathname === "/login") {
-      title = "Sign In | MultiVendor";
-      description = "Access your MultiVendor account.";
+      title = "Sign In | PawsieMart";
+      description = "Access your PawsieMart account.";
     } else if (location.pathname === "/register") {
-      title = "Create Account | MultiVendor";
+      title = "Create Account | PawsieMart";
       description = "Register as a customer or apply as a vendor.";
     } else if (location.pathname === "/about") {
-      title = "About | MultiVendor";
-      description = "Learn more about the MultiVendor marketplace.";
+      title = "About | PawsieMart";
+      description = "Learn more about the PawsieMart marketplace.";
     } else if (location.pathname === "/privacy") {
-      title = "Privacy | MultiVendor";
+      title = "Privacy | PawsieMart";
       description = "Review the marketplace privacy policy.";
     } else if (location.pathname === "/terms") {
-      title = "Terms | MultiVendor";
+      title = "Terms | PawsieMart";
       description = "Read the marketplace terms and conditions.";
     } else if (location.pathname === "/accessibility") {
-      title = "Accessibility | MultiVendor";
-      description = "Accessibility information for the MultiVendor website.";
+      title = "Accessibility | PawsieMart";
+      description = "Accessibility information for the PawsieMart website.";
     }
 
     document.title = title;
@@ -119,9 +146,8 @@ export default function AppLayout() {
     descriptionMeta.setAttribute("content", description);
   }, [location.pathname, location.search]);
 
-  const handleSearchSubmit = (event) => {
-    event.preventDefault();
-    const query = searchInput.trim();
+  const handleSearchSubmit = (value) => {
+    const query = value.trim();
     navigate(query ? `/products?q=${encodeURIComponent(query)}` : "/products");
     closeMobile();
   };
@@ -132,18 +158,18 @@ export default function AppLayout() {
         <div className="border-0 border-slate-800 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.15),transparent_100%)] text-white shadow-[0_22px_60px_-44px_rgba(15,23,42,0.9)]">
           <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3 text-xs">
             <p className="hidden font-semibold tracking-[0.02em] text-slate-950 sm:block">
-              Trusted multi-vendor marketplace for everyday shopping
+              Curated shopping for everyday finds with a little cat-loving charm
             </p>
             <div className="flex items-center gap-2">
               {isAuthenticated ? (
                 <>
-                  <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.16em] text-white/90 backdrop-blur">
+                  <span className="rounded-full border-2 !border-lime-500 bg-lime-300 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.16em] text-gray-800 backdrop-blur">
                     {user?.role}
                   </span>
                   <button
                     type="button"
                     onClick={logout}
-                    className="rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-[11px] font-semibold text-white/85 transition hover:bg-white/15 hover:text-white"
+                    className="rounded-full border border-white/10 !bg-gray-800 px-3 py-1.5 text-[11px] font-semibold text-white/85 transition hover:bg-white/15 hover:text-white"
                   >
                     Logout
                   </button>
@@ -168,21 +194,15 @@ export default function AppLayout() {
           </div>
         </div>
 
-        <div className="border-b border-slate-200 bg-white/95 shadow-[0_18px_44px_-40px_rgba(15,23,42,0.22)] backdrop-blur">
+        <div className="border-b border-white/10 bg-[linear-gradient(180deg,_rgba(15,23,42,0.98)_0%,_rgba(2,6,23,0.96)_100%)] shadow-[0_18px_44px_-40px_rgba(15,23,42,0.55)] backdrop-blur">
           <div className="mx-auto w-full max-w-7xl">
             <div className="grid grid-cols-[1fr_auto] items-center px-4 py-4 md:grid-cols-[1fr_auto_1fr] md:px-5">
-              <Link to="/" className="flex items-center gap-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-md bg-slate-950 text-sm font-black text-white shadow-[0_18px_35px_-20px_rgba(15,23,42,0.8)]">
-                  MV
-                </span>
-                <div>
-                  <p className="text-lg font-black tracking-[-0.03em] text-slate-950">
-                    MultiVendor
-                  </p>
-                  <p className="hidden text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500 sm:block">
-                    Curated marketplace
-                  </p>
-                </div>
+              <Link to="/" aria-label="PawsieMart home">
+                <BrandLogo
+                  nameClassName="text-lg text-white"
+                  taglineClassName="hidden text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 sm:block"
+                  tagline="Curated marketplace"
+                />
               </Link>
 
               <nav className="hidden items-center justify-center gap-1 md:flex">
@@ -276,32 +296,21 @@ export default function AppLayout() {
               </nav>
 
               <div className="flex items-center justify-end gap-3">
-                <form
+                <SearchForm
+                  key={`desktop:${location.pathname}:${location.search}`}
+                  initialValue={routeSearchQuery}
                   onSubmit={handleSearchSubmit}
-                  className="hidden w-full max-w-sm md:flex md:items-center md:justify-end"
-                >
-                  <div className="flex w-full items-center gap-2 rounded-full border border-slate-200 bg-white px-2 py-2 shadow-[0_16px_38px_-32px_rgba(15,23,42,0.35)] transition focus-within:border-amber-200 focus-within:bg-amber-50/40">
-                    <input
-                      type="search"
-                      value={searchInput}
-                      onChange={(event) => setSearchInput(event.target.value)}
-                      placeholder="Search products..."
-                      className="min-w-0 flex-1 bg-transparent px-3 text-sm font-medium text-slate-950 outline-none placeholder:text-slate-400"
-                    />
-                    <button
-                      type="submit"
-                      className="rounded-full bg-slate-950 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
-                    >
-                      Search
-                    </button>
-                  </div>
-                </form>
+                  wrapperClassName="hidden w-full max-w-[19rem] md:flex md:items-center md:justify-end"
+                  containerClassName="flex w-full items-center gap-1.5 rounded-full border border-white/10 bg-white/8 px-1.5 py-1.5 shadow-[0_16px_38px_-32px_rgba(15,23,42,0.55)] transition focus-within:border-amber-200 focus-within:bg-white/12"
+                  inputClassName="min-w-0 flex-1 bg-transparent px-2.5 text-sm font-medium text-white outline-none placeholder:text-slate-400"
+                  buttonClassName="rounded-full bg-amber-300 px-3.5 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-200"
+                />
 
                 <button
                   type="button"
                   aria-label={mobileOpen ? "Close menu" : "Open menu"}
                   aria-expanded={mobileOpen}
-                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition hover:border-amber-200 hover:bg-amber-50 md:hidden"
+                  className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-semibold text-white transition hover:border-amber-200 hover:bg-white/12 md:hidden"
                   onClick={() => setMobileOpen((prev) => !prev)}
                 >
                   Menu
@@ -313,31 +322,23 @@ export default function AppLayout() {
               className={`md:hidden ${mobileOpen ? "block" : "hidden"}`}
               aria-hidden={!mobileOpen}
             >
-              <div className="border-t border-slate-200 bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fafc_100%)]">
+              <div className="border-t border-white/10 bg-[linear-gradient(180deg,_#111827_0%,_#020617_100%)]">
                 <div className="mx-auto w-full max-w-7xl px-4 py-4">
-                  <form onSubmit={handleSearchSubmit} className="mb-4 md:hidden">
-                    <div className="flex items-center gap-2 rounded-[1rem] border border-slate-200 bg-white p-2 shadow-sm">
-                      <input
-                        type="search"
-                        value={searchInput}
-                        onChange={(event) => setSearchInput(event.target.value)}
-                        placeholder="Search products..."
-                        className="min-w-0 flex-1 bg-transparent px-2 text-sm font-medium text-slate-950 outline-none placeholder:text-slate-400"
-                      />
-                      <button
-                        type="submit"
-                        className="rounded-[0.85rem] bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-                      >
-                        Search
-                      </button>
-                    </div>
-                  </form>
+                  <SearchForm
+                    key={`mobile:${location.pathname}:${location.search}`}
+                    initialValue={routeSearchQuery}
+                    onSubmit={handleSearchSubmit}
+                    wrapperClassName="mb-4 md:hidden"
+                    containerClassName="flex items-center gap-2 rounded-[1rem] border border-white/10 bg-white/8 p-2 shadow-sm"
+                    inputClassName="min-w-0 flex-1 bg-transparent px-2 text-sm font-medium text-white outline-none placeholder:text-slate-400"
+                    buttonClassName="rounded-[0.85rem] bg-amber-300 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-200"
+                  />
 
                   <div className="grid gap-2">
                     <NavLink
                       onClick={closeMobile}
                       to="/products"
-                      className="rounded-[1rem] px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white"
+                      className="rounded-[1rem] px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/10"
                     >
                       Products
                     </NavLink>
@@ -345,7 +346,7 @@ export default function AppLayout() {
                       <NavLink
                         onClick={closeMobile}
                         to="/profile"
-                        className="rounded-[1rem] px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white"
+                        className="rounded-[1rem] px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/10"
                       >
                         Account
                       </NavLink>
@@ -355,21 +356,21 @@ export default function AppLayout() {
                         <NavLink
                           onClick={closeMobile}
                           to="/cart"
-                          className="rounded-[1rem] px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white"
+                          className="rounded-[1rem] px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/10"
                         >
                           Cart
                         </NavLink>
                         <NavLink
                           onClick={closeMobile}
                           to="/wishlist"
-                          className="rounded-[1rem] px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white"
+                          className="rounded-[1rem] px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/10"
                         >
                           Wishlist
                         </NavLink>
                         <NavLink
                           onClick={closeMobile}
                           to="/orders"
-                          className="rounded-[1rem] px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white"
+                          className="rounded-[1rem] px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/10"
                         >
                           Orders
                         </NavLink>
@@ -379,7 +380,7 @@ export default function AppLayout() {
                       <NavLink
                         onClick={closeMobile}
                         to="/vendor/dashboard"
-                        className="rounded-[1rem] px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white"
+                        className="rounded-[1rem] px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/10"
                       >
                         Vendor Panel
                       </NavLink>
@@ -388,7 +389,7 @@ export default function AppLayout() {
                       <NavLink
                         onClick={closeMobile}
                         to="/admin/dashboard"
-                        className="rounded-[1rem] px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white"
+                        className="rounded-[1rem] px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/10"
                       >
                         Admin Panel
                       </NavLink>
@@ -402,7 +403,7 @@ export default function AppLayout() {
                         logout();
                         closeMobile();
                       }}
-                      className="mt-4 w-full rounded-[1rem] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                      className="mt-4 w-full rounded-[1rem] bg-amber-300 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-200"
                     >
                       Logout
                     </button>
@@ -412,7 +413,7 @@ export default function AppLayout() {
                       <Link
                         onClick={closeMobile}
                         to="/login"
-                        className="rounded-[1rem] border border-slate-200 px-4 py-3 text-center text-sm font-semibold text-slate-900 transition hover:bg-white"
+                        className="rounded-[1rem] border border-white/10 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/10"
                       >
                         Sign in
                       </Link>

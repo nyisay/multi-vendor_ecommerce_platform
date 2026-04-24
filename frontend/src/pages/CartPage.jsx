@@ -12,8 +12,10 @@ export default function CartPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const loadCart = async () => {
-    setLoading(true);
+  const loadCart = async ({ showLoader = false } = {}) => {
+    if (showLoader) {
+      setLoading(true);
+    }
     setError("");
     try {
       const data = await cartApi.get();
@@ -21,35 +23,14 @@ export default function CartPage() {
     } catch (err) {
       setError(err.message || "Failed to load cart");
     } finally {
-      setLoading(false);
+      if (showLoader) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    let cancelled = false;
-
-    const initialLoad = async () => {
-      try {
-        const data = await cartApi.get();
-        if (!cancelled) {
-          setCart(data);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err.message || "Failed to load cart");
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    };
-
-    initialLoad();
-
-    return () => {
-      cancelled = true;
-    };
+    loadCart({ showLoader: true });
   }, []);
 
   const estimatedTotal = useMemo(() => {

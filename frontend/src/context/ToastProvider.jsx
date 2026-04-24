@@ -30,20 +30,25 @@ export function ToastProvider({ children }) {
           100% { opacity: 1; transform: translateY(0) scale(1); }
         }
       `}</style>
-      <div className="fixed left-1/2 top-4 z-50 w-[min(92vw,520px)] -translate-x-1/2 space-y-3" role="status" aria-live="polite" aria-atomic="true">
+      <div
+        className="pointer-events-none fixed inset-x-0 top-4 z-50 flex flex-col items-center gap-3 px-4"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-white shadow-lg backdrop-blur-sm ${
+            className={`pointer-events-auto inline-flex w-fit max-w-[min(92vw,420px)] items-center justify-center rounded-[1.15rem] border px-4 py-2.5 text-center text-sm font-semibold leading-5 text-white shadow-[0_18px_40px_-26px_rgba(15,23,42,0.55)] backdrop-blur-sm ${
               toast.type === "error"
-                ? "border-rose-300/70 bg-rose-600/90"
+                ? "border-rose-300/70 bg-rose-600/92"
                 : toast.type === "success"
-                  ? "border-emerald-300/70 bg-emerald-600/90"
-                  : "border-amber-300/60 bg-slate-900/92"
+                  ? "border-emerald-300/70 bg-emerald-600/92"
+                  : "border-amber-300/60 bg-slate-900/94"
             }`}
             style={{ animation: "toastEnter 220ms ease-out" }}
           >
-            {toast.message}
+            <span className="break-words">{toast.message}</span>
           </div>
         ))}
       </div>

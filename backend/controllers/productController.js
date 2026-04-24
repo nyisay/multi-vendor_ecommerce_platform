@@ -43,6 +43,49 @@ const normalizeReviewComment = (comment) => {
 
 const isSameId = (left, right) => String(left) === String(right);
 
+const parsePositiveNumber = (value) => {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+
+  const parsedValue = Number(value);
+  if (Number.isNaN(parsedValue) || parsedValue < 0) {
+    return null;
+  }
+
+  return parsedValue;
+};
+
+const buildCatalogBaseFilter = ({ category, q, stockStatus, minRating }) => {
+  const filter = {};
+  const parsedMinRating = parsePositiveNumber(minRating);
+
+  if (category) {
+    filter.categoryId = category;
+  }
+
+  if (q) {
+    filter.$or = [
+      { name: { $regex: q, $options: "i" } },
+      { description: { $regex: q, $options: "i" } }
+    ];
+  }
+
+  if (stockStatus === "in_stock") {
+    filter.stock = { $gt: 0 };
+  }
+
+  if (stockStatus === "out_of_stock") {
+    filter.stock = { $lte: 0 };
+  }
+
+  if (parsedMinRating !== null) {
+    filter.averageRating = { $gte: parsedMinRating };
+  }
+
+  return filter;
+};
+
 // Create Product (Vendor only)
 const createProduct = async (req, res) => {
   try {
@@ -79,54 +122,108 @@ const getProducts = async (req, res) => {
   try {
     const {
       category,
+      vendor,
       minPrice,
       maxPrice,
+      minRating,
+      stockStatus,
       q,
       sortBy = "newest",
       page = 1,
       limit = 12
     } = req.query;
 
-    const filter = {};
+    const baseFilter = buildCatalogBaseFilter({
+      category,
+      q,
+      stockStatus,
+      minRating
+    });
+    const filter = { ...baseFilter };
+    const parsedMinPrice = parsePositiveNumber(minPrice);
+    const parsedMaxPrice = parsePositiveNumber(maxPrice);
 
-    if (category) {
-      filter.categoryId = category;
+    if (vendor) {
+      filter.vendorId = vendor;
     }
 
-    if (minPrice || maxPrice) {
+    if (parsedMinPrice !== null || parsedMaxPrice !== null) {
       filter.price = {};
-      if (minPrice) filter.price.$gte = Number(minPrice);
-      if (maxPrice) filter.price.$lte = Number(maxPrice);
-    }
-
-    if (q) {
-      filter.$or = [
-        { name: { $regex: q, $options: "i" } },
-        { description: { $regex: q, $options: "i" } }
-      ];
+      if (parsedMinPrice !== null) filter.price.$gte = parsedMinPrice;
+      if (parsedMaxPrice !== null) filter.price.$lte = parsedMaxPrice;
     }
 
     const sortMap = {
       newest: { createdAt: -1 },
       oldest: { createdAt: 1 },
-      price_asc: { price: 1 },
-      price_desc: { price: -1 }
+      price_asc: { price: 1, createdAt: -1 },
+      price_desc: { price: -1, createdAt: -1 },
+      rating_desc: { averageRating: -1, createdAt: -1 },
+      rating_asc: { averageRating: 1, createdAt: -1 },
+      name_asc: { name: 1, createdAt: -1 },
+      name_desc: { name: -1, createdAt: -1 }
     };
 
     const pageNumber = Math.max(1, Number(page));
     const limitNumber = Math.max(1, Number(limit));
     const skip = (pageNumber - 1) * limitNumber;
 
-    const total = await Product.countDocuments(filter);
-    const products = await Product.find(filter)
-      .populate("vendorId", "name")
-      .populate("categoryId", "name")
-      .sort(sortMap[sortBy] || sortMap.newest)
-      .skip(skip)
-      .limit(limitNumber);
+    const [total, products, discoveryProducts] = await Promise.all([
+      Product.countDocuments(filter),
+      Product.find(filter)
+        .populate("vendorId", "name")
+        .populate("categoryId", "name")
+        .sort(sortMap[sortBy] || sortMap.newest)
+        .skip(skip)
+        .limit(limitNumber),
+      Product.find(baseFilter)
+        .select("price vendorId")
+        .populate("vendorId", "name")
+    ]);
+
+    const discoverySummary = discoveryProducts.reduce((summary, item) => {
+      const priceValue = Number(item.price || 0);
+      const vendorId = item.vendorId?._id ? String(item.vendorId._id) : "";
+      const vendorName = item.vendorId?.name || "";
+
+      if (vendorId && vendorName) {
+        const vendorEntry = summary.vendors.get(vendorId) || {
+          id: vendorId,
+          name: vendorName,
+          productCount: 0
+        };
+        vendorEntry.productCount += 1;
+        summary.vendors.set(vendorId, vendorEntry);
+      }
+
+      if (summary.priceRange.min === null || priceValue < summary.priceRange.min) {
+        summary.priceRange.min = priceValue;
+      }
+
+      if (summary.priceRange.max === null || priceValue > summary.priceRange.max) {
+        summary.priceRange.max = priceValue;
+      }
+
+      return summary;
+    }, {
+      vendors: new Map(),
+      priceRange: {
+        min: null,
+        max: null
+      }
+    });
 
     res.json({
       items: products,
+      filters: {
+        vendors: Array.from(discoverySummary.vendors.values()).sort((left, right) =>
+          left.name.localeCompare(right.name)
+        ),
+        priceRange: {
+          min: discoverySummary.priceRange.min ?? 0,
+          max: discoverySummary.priceRange.max ?? 0
+        }
+      },
       pagination: {
         total,
         page: pageNumber,

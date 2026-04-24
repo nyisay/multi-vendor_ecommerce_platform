@@ -55,7 +55,7 @@ export default function LoginPage() {
             Account access
           </p>
           <p className="mt-2 text-2xl font-black tracking-tight text-slate-950">
-            Continue to your dashboard
+            Continue to your account
           </p>
         </div>
         <CardBody className="p-6">

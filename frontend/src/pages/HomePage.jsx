@@ -17,7 +17,7 @@ const CATEGORY_SURFACES = [
 ];
 
 export default function HomePage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [products, setProducts] = useState([]);
@@ -122,11 +122,11 @@ export default function HomePage() {
             </div>
 
             <div className="space-y-4">
-              <h1 className="max-w-3xl text-4xl font-black leading-[0.95] tracking-[-0.04em] !text-[rgb(83,112,245)] sm:text-5xl md:text-6xl xl:text-[4.5rem]">
+              <h1 className="max-w-3xl text-4xl font-black leading-[0.95] tracking-[-0.04em] !text-amber-200 sm:text-5xl md:text-6xl xl:text-[4.5rem]">
                 Find standout products before everyone else does.
               </h1>
               <p className="max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-                Browse trusted vendors, compare categories, and move from discovery
+                Browse trusted vendors, explore categories, and move from discovery
                 to checkout in a storefront that feels curated instead of crowded.
               </p>
             </div>
@@ -178,10 +178,10 @@ export default function HomePage() {
               </Link>
               {isAuthenticated ? (
                 <Link
-                  to="/dashboard"
+                  to={user?.role === "customer" ? "/orders" : "/dashboard"}
                   className="rounded-full border border-white/15 bg-white/10 px-6 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/15"
                 >
-                  Go to dashboard
+                  {user?.role === "customer" ? "View your orders" : "Go to dashboard"}
                 </Link>
               ) : (
                 <Link
@@ -217,13 +217,13 @@ export default function HomePage() {
                   <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-white/55">
                     Discovery lanes
                   </p>
-                  <h2 className="mt-2 text-2xl font-black tracking-tight text-white">
+                  <h2 className="mt-2 text-2xl font-black tracking-tight !text-gray-200">
                     Shop by signal, not guesswork
                   </h2>
                 </div>
                 <Link
                   to="/products"
-                  className="text-xs font-semibold text-amber-200 transition hover:text-amber-100"
+                  className="text-xs font-semibold !text-amber-100 transition hover:text-amber-100 mb-10"
                 >
                   Browse all
                 </Link>
@@ -236,13 +236,13 @@ export default function HomePage() {
                     to={`/products?q=${encodeURIComponent(category)}`}
                     className={`group rounded-[1.4rem] px-4 py-4 ring-1 transition hover:-translate-y-0.5 ${CATEGORY_SURFACES[index % CATEGORY_SURFACES.length]}`}
                   >
-                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] opacity-70">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] opacity-70 !text-green-900">
                       Category
                     </p>
-                    <p className="mt-2 text-lg font-black tracking-tight">
+                    <p className="mt-2 text-lg font-black tracking-tight !text-gray-500">
                       {category}
                     </p>
-                    <p className="mt-5 text-xs font-semibold opacity-75 transition group-hover:opacity-100">
+                    <p className="mt-5 text-xs font-semibold opacity-75 transition group-hover:opacity-100 !text-black">
                       Search this collection
                     </p>
                   </Link>
@@ -252,7 +252,7 @@ export default function HomePage() {
 
             <div className="grid gap-4 sm:grid-cols-[1.15fr_0.85fr]">
               <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/60 p-5">
-                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-white/55">
+                <p className="text-[11px] font-bold uppercase tracking-[0.24em] !text-white/55">
                   Storefront focus
                 </p>
                 <p className="mt-3 text-xl font-black leading-tight text-white">
@@ -265,13 +265,12 @@ export default function HomePage() {
               </div>
 
               <div className="rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-amber-300 to-orange-300 p-5 text-slate-950">
-                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-800/70">
+                <p className="text-[21px] font-extrabold uppercase tracking-[0.24em] text-slate-800/70">
                   Built for
                 </p>
-                <div className="mt-4 space-y-3 text-sm font-semibold">
+                <div className="mt-4 space-y-3 text-md font-semibold">
                   <p>Shoppers</p>
                   <p>Sellers</p>
-                  <p>Admins</p>
                 </div>
               </div>
             </div>
@@ -332,7 +331,7 @@ export default function HomePage() {
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
                     {item.vendorId?.name || "Vendor"}
                   </p>
-                  <h3 className="mt-2 text-2xl font-black tracking-tight text-white">
+                  <h3 className="mt-2 text-xl font-black tracking-tight !text-gray-100">
                     {item.name}
                   </h3>
                 </div>
