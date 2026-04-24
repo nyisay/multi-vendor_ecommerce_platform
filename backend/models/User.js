@@ -1,5 +1,48 @@
 const mongoose = require("mongoose");
 
+const defaultShippingAddressSchema = new mongoose.Schema({
+  fullName: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  phone: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  addressLine1: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  addressLine2: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  city: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  state: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  postalCode: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  country: {
+    type: String,
+    trim: true,
+    default: ""
+  }
+}, { _id: false });
+
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -34,6 +77,15 @@ const userSchema = new mongoose.Schema({
   },
   address: {
     type: String
+  },
+  defaultShippingAddress: {
+    type: defaultShippingAddressSchema,
+    default: () => ({})
+  },
+  defaultPaymentMethod: {
+    type: String,
+    enum: ["cod", "card", "bank_transfer"],
+    default: "cod"
   },
   profileImageUrl: {
     type: String

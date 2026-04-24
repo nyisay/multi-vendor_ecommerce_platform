@@ -179,14 +179,6 @@ export default function CartPage() {
                   >
                     Proceed to checkout
                   </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={() => navigate("/checkout")}
-                    disabled={!cart?.items || cart.items.length === 0}
-                    fullWidth
-                  >
-                    Go to checkout
-                  </Button>
                 </div>
 
                 <div className="rounded-2xl bg-[linear-gradient(180deg,_#fffaf0_0%,_#ffffff_100%)] p-4 ring-1 ring-amber-100">

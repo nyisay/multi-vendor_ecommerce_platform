@@ -66,6 +66,10 @@ app.use("/api/cart", cartRoutes);
 const orderRoutes = require("./routes/orderRoutes");
 app.use("/api/orders", orderRoutes);
 
+// Wishlist route
+const wishlistRoutes = require("./routes/wishlistRoutes");
+app.use("/api/wishlist", wishlistRoutes);
+
 app.use(notFoundHandler);
 app.use(errorHandler);
 

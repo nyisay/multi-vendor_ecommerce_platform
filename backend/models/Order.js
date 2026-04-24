@@ -1,5 +1,48 @@
 const mongoose = require("mongoose");
 
+const shippingAddressSchema = new mongoose.Schema({
+  fullName: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  phone: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  addressLine1: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  addressLine2: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  city: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  state: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  postalCode: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  country: {
+    type: String,
+    trim: true,
+    default: ""
+  }
+}, { _id: false });
+
 const orderSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -33,6 +76,14 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  subtotal: {
+    type: Number,
+    default: 0
+  },
+  shippingFee: {
+    type: Number,
+    default: 0
+  },
   status: {
     type: String,
     enum: ["pending", "processing", "paid", "shipped", "delivered", "cancelled"],
@@ -45,7 +96,22 @@ const orderSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
+    enum: ["cod", "card", "bank_transfer"],
     default: "cod"
+  },
+  deliveryMethod: {
+    type: String,
+    enum: ["standard", "express"],
+    default: "standard"
+  },
+  shippingAddress: {
+    type: shippingAddressSchema,
+    default: () => ({})
+  },
+  orderNotes: {
+    type: String,
+    trim: true,
+    default: ""
   },
   cancelledBy: {
     type: String,

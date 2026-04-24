@@ -4,6 +4,24 @@ import { AuthContext } from "./authContextObject";
 
 const USER_KEY = "mve_user";
 
+function toStoredUser(profile) {
+  return {
+    _id: profile._id,
+    name: profile.name,
+    email: profile.email,
+    role: profile.role,
+    vendorStatus: profile.vendorStatus,
+    shopName: profile.shopName,
+    phone: profile.phone,
+    address: profile.address,
+    defaultShippingAddress: profile.defaultShippingAddress,
+    defaultPaymentMethod: profile.defaultPaymentMethod,
+    profileImageUrl: profile.profileImageUrl,
+    profileTheme: profile.profileTheme,
+    profileCardBackgroundUrl: profile.profileCardBackgroundUrl,
+  };
+}
+
 function getInitialAuth() {
   const token = localStorage.getItem(TOKEN_KEY);
   const rawUser = localStorage.getItem(USER_KEY);
@@ -43,19 +61,7 @@ export function AuthProvider({ children }) {
 
   const refreshProfile = async () => {
     const profile = await authApi.getProfile();
-    const nextUser = {
-      _id: profile._id,
-      name: profile.name,
-      email: profile.email,
-      role: profile.role,
-      vendorStatus: profile.vendorStatus,
-      shopName: profile.shopName,
-      phone: profile.phone,
-      address: profile.address,
-      profileImageUrl: profile.profileImageUrl,
-      profileTheme: profile.profileTheme,
-      profileCardBackgroundUrl: profile.profileCardBackgroundUrl,
-    };
+    const nextUser = toStoredUser(profile);
     localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
     setAuthState((prev) => ({ ...prev, user: nextUser, bootstrapped: true }));
     return nextUser;
@@ -66,19 +72,7 @@ export function AuthProvider({ children }) {
     // Save token before loading profile so auth header is present.
     localStorage.setItem(TOKEN_KEY, data.token);
     const profile = await authApi.getProfile();
-    setSession(data.token, {
-      _id: profile._id,
-      name: profile.name,
-      email: profile.email,
-      role: profile.role,
-      vendorStatus: profile.vendorStatus,
-      shopName: profile.shopName,
-      phone: profile.phone,
-      address: profile.address,
-      profileImageUrl: profile.profileImageUrl,
-      profileTheme: profile.profileTheme,
-      profileCardBackgroundUrl: profile.profileCardBackgroundUrl,
-    });
+    setSession(data.token, toStoredUser(profile));
     return data;
   };
 
@@ -88,19 +82,7 @@ export function AuthProvider({ children }) {
 
   const updateProfile = async (payload) => {
     const updated = await authApi.updateProfile(payload);
-    const nextUser = {
-      _id: updated._id,
-      name: updated.name,
-      email: updated.email,
-      role: updated.role,
-      vendorStatus: updated.vendorStatus,
-      shopName: updated.shopName,
-      phone: updated.phone,
-      address: updated.address,
-      profileImageUrl: updated.profileImageUrl,
-      profileTheme: updated.profileTheme,
-      profileCardBackgroundUrl: updated.profileCardBackgroundUrl,
-    };
+    const nextUser = toStoredUser(updated);
     localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
     setAuthState((prev) => ({ ...prev, user: nextUser }));
     return updated;

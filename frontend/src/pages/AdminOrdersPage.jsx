@@ -2,6 +2,11 @@ import { useEffect, useState } from "react";
 import DashboardSidebar from "../components/DashboardSidebar";
 import { useToast } from "../context/useToast";
 import { orderApi } from "../services/api";
+import {
+  formatDeliveryMethod,
+  formatPaymentMethod,
+  formatShippingAddress,
+} from "../services/checkout";
 
 export default function AdminOrdersPage() {
   const { showToast } = useToast();
@@ -76,8 +81,41 @@ export default function AdminOrdersPage() {
                   </span>
                 </div>
                 <p className="text-sm text-slate-600">Customer: {order.userId?.name}</p>
-                <p className="text-sm text-slate-600">Payment: {order.paymentStatus}</p>
-                <p className="text-sm text-slate-600">Total: ${order.totalPrice}</p>
+                <p className="text-sm text-slate-600">
+                  Payment: {formatPaymentMethod(order.paymentMethod)} · {order.paymentStatus}
+                </p>
+                <p className="text-sm text-slate-600">
+                  Delivery: {formatDeliveryMethod(order.deliveryMethod)}
+                </p>
+                <p className="text-sm text-slate-600">
+                  Recipient: {order.shippingAddress?.fullName || "Customer"}
+                </p>
+                <p className="text-sm text-slate-600">
+                  Address: {formatShippingAddress(order.shippingAddress) || "No shipping address saved."}
+                </p>
+                <p className="text-sm text-slate-600">
+                  Total: ${Number(order.totalPrice || 0).toFixed(2)}
+                </p>
+                {order.orderNotes ? (
+                  <p className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                    Notes: {order.orderNotes}
+                  </p>
+                ) : null}
+                <div className="mt-3 rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500">Items</p>
+                  <div className="mt-2 space-y-2">
+                    {order.items?.map((item) => (
+                      <div key={item._id} className="flex items-center justify-between gap-3 text-sm">
+                        <span className="font-semibold text-slate-700">
+                          {item.productId?.name || "Product"} x {item.quantity}
+                        </span>
+                        <span className="font-bold text-slate-900">
+                          {item.fulfillmentStatus}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {["pending", "paid", "shipped", "delivered", "cancelled"].map((status) => (
                     <button

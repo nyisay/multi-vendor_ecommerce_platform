@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { PRODUCT_MENU_GROUPS } from "../data/productMegaMenu";
 import { getImageUrl, productApi } from "../services/api";
+import { getRecentlyViewedProducts } from "../services/recentlyViewed";
 
 const CATEGORY_SURFACES = [
   "bg-amber-100 text-amber-950 ring-amber-200",
@@ -21,6 +22,7 @@ export default function HomePage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [products, setProducts] = useState([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [recentlyViewed, setRecentlyViewed] = useState(() => getRecentlyViewedProducts());
 
   useEffect(() => {
     let cancelled = false;
@@ -45,6 +47,20 @@ export default function HomePage() {
     loadProducts();
     return () => {
       cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const syncRecentlyViewed = () => {
+      setRecentlyViewed(getRecentlyViewedProducts());
+    };
+
+    window.addEventListener("focus", syncRecentlyViewed);
+    window.addEventListener("storage", syncRecentlyViewed);
+
+    return () => {
+      window.removeEventListener("focus", syncRecentlyViewed);
+      window.removeEventListener("storage", syncRecentlyViewed);
     };
   }, []);
 
@@ -106,7 +122,7 @@ export default function HomePage() {
             </div>
 
             <div className="space-y-4">
-              <h1 className="max-w-3xl text-4xl font-black leading-[0.95] tracking-[-0.04em] text-white sm:text-5xl md:text-6xl xl:text-[4.5rem]">
+              <h1 className="max-w-3xl text-4xl font-black leading-[0.95] tracking-[-0.04em] !text-[rgb(83,112,245)] sm:text-5xl md:text-6xl xl:text-[4.5rem]">
                 Find standout products before everyone else does.
               </h1>
               <p className="max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
@@ -355,6 +371,83 @@ export default function HomePage() {
           </div>
         )}
       </section>
+
+      {recentlyViewed.length > 0 && (
+        <section className="space-y-5">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">
+                Recently viewed
+              </p>
+              <h2 className="mt-2 text-3xl font-black tracking-[-0.03em] text-slate-950 sm:text-4xl">
+                Pick up where you left off
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                A light discovery layer that keeps the latest products you opened
+                within easy reach on your next visit.
+              </p>
+            </div>
+            <Link
+              to="/products"
+              className="text-sm font-semibold text-slate-900 transition hover:text-amber-700"
+            >
+              Continue browsing
+            </Link>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {recentlyViewed.slice(0, 4).map((item, index) => (
+              <article
+                key={item._id}
+                className={`group overflow-hidden rounded-[1.8rem] border border-slate-200 bg-white shadow-[0_20px_60px_-42px_rgba(15,23,42,0.35)] transition hover:-translate-y-1 hover:shadow-[0_28px_70px_-36px_rgba(15,23,42,0.4)] ${
+                  index === 0 ? "xl:col-span-2" : ""
+                }`}
+              >
+                <div className={`relative ${index === 0 ? "h-72" : "h-60"}`}>
+                  {item.imageUrl ? (
+                    <img
+                      src={getImageUrl(item.imageUrl)}
+                      alt={item.name}
+                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="h-full w-full bg-[linear-gradient(135deg,_#e2e8f0,_#f8fafc_42%,_#cbd5e1)]" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+                  <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
+                    <span className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-950">
+                      {item.categoryName || "Uncategorized"}
+                    </span>
+                    <span className="rounded-full bg-amber-300 px-3 py-1 text-sm font-black text-slate-950">
+                      ${item.price}
+                    </span>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
+                      {item.vendorName || "Vendor"}
+                    </p>
+                    <h3 className="mt-2 text-2xl font-black tracking-tight text-white">
+                      {item.name}
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-4 p-5">
+                  <p className="text-sm font-semibold text-slate-600">
+                    Rating {Number(item.averageRating || 0).toFixed(1)}
+                  </p>
+                  <Link
+                    to={`/products/${item._id}`}
+                    className="text-sm font-semibold text-slate-950 transition hover:text-amber-700"
+                  >
+                    Revisit product
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="rounded-[2rem] border border-slate-200 bg-[linear-gradient(180deg,_#fffaf0_0%,_#ffffff_100%)] p-6 shadow-[0_20px_60px_-48px_rgba(15,23,42,0.25)] sm:p-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

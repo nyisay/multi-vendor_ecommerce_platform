@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/useAuth";
 import { useToast } from "../context/useToast";
 import { getImageUrl } from "../services/api";
+import { PAYMENT_METHOD_OPTIONS } from "../services/checkout";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Select from "../components/ui/Select";
@@ -37,7 +38,11 @@ export default function ProfilePage() {
   };
 
   useEffect(() => {
-    setTheme(user?.profileTheme || "ocean");
+    const timerId = setTimeout(() => {
+      setTheme(user?.profileTheme || "ocean");
+    }, 0);
+
+    return () => clearTimeout(timerId);
   }, [user?.profileTheme]);
 
   useEffect(() => {
@@ -56,6 +61,33 @@ export default function ProfilePage() {
       payload.append("name", formData.get("name"));
       payload.append("phone", formData.get("phone") || "");
       payload.append("address", formData.get("address") || "");
+      payload.append(
+        "defaultShippingFullName",
+        formData.get("defaultShippingFullName") || "",
+      );
+      payload.append(
+        "defaultShippingPhone",
+        formData.get("defaultShippingPhone") || "",
+      );
+      payload.append(
+        "defaultShippingAddressLine1",
+        formData.get("defaultShippingAddressLine1") || "",
+      );
+      payload.append(
+        "defaultShippingAddressLine2",
+        formData.get("defaultShippingAddressLine2") || "",
+      );
+      payload.append("defaultShippingCity", formData.get("defaultShippingCity") || "");
+      payload.append("defaultShippingState", formData.get("defaultShippingState") || "");
+      payload.append(
+        "defaultShippingPostalCode",
+        formData.get("defaultShippingPostalCode") || "",
+      );
+      payload.append(
+        "defaultShippingCountry",
+        formData.get("defaultShippingCountry") || "",
+      );
+      payload.append("defaultPaymentMethod", formData.get("defaultPaymentMethod") || "cod");
       payload.append("profileTheme", theme);
       if (user?.role === "vendor") {
         payload.append("shopName", formData.get("shopName") || "");
@@ -217,6 +249,161 @@ export default function ProfilePage() {
                 />
               </div>
             )}
+
+            <div className="space-y-4 rounded-[1.6rem] border border-slate-200 bg-slate-50 p-5">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
+                  Checkout defaults
+                </p>
+                <p className="mt-1 text-sm text-slate-600">
+                  Save your preferred shipping details and payment method so checkout
+                  can start prefilled.
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label
+                    className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500"
+                    htmlFor="defaultShippingFullName"
+                  >
+                    Recipient name
+                  </label>
+                  <Input
+                    id="defaultShippingFullName"
+                    name="defaultShippingFullName"
+                    defaultValue={user?.defaultShippingAddress?.fullName || user?.name || ""}
+                    placeholder="Recipient name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label
+                    className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500"
+                    htmlFor="defaultShippingPhone"
+                  >
+                    Shipping phone
+                  </label>
+                  <Input
+                    id="defaultShippingPhone"
+                    name="defaultShippingPhone"
+                    defaultValue={user?.defaultShippingAddress?.phone || user?.phone || ""}
+                    placeholder="Shipping phone"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <label
+                    className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500"
+                    htmlFor="defaultShippingAddressLine1"
+                  >
+                    Address line 1
+                  </label>
+                  <Input
+                    id="defaultShippingAddressLine1"
+                    name="defaultShippingAddressLine1"
+                    defaultValue={
+                      user?.defaultShippingAddress?.addressLine1 || user?.address || ""
+                    }
+                    placeholder="Street address"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label
+                    className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500"
+                    htmlFor="defaultShippingAddressLine2"
+                  >
+                    Address line 2
+                  </label>
+                  <Input
+                    id="defaultShippingAddressLine2"
+                    name="defaultShippingAddressLine2"
+                    defaultValue={user?.defaultShippingAddress?.addressLine2 || ""}
+                    placeholder="Apartment, suite, building"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="space-y-2">
+                  <label
+                    className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500"
+                    htmlFor="defaultShippingCity"
+                  >
+                    City
+                  </label>
+                  <Input
+                    id="defaultShippingCity"
+                    name="defaultShippingCity"
+                    defaultValue={user?.defaultShippingAddress?.city || ""}
+                    placeholder="City"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label
+                    className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500"
+                    htmlFor="defaultShippingState"
+                  >
+                    State
+                  </label>
+                  <Input
+                    id="defaultShippingState"
+                    name="defaultShippingState"
+                    defaultValue={user?.defaultShippingAddress?.state || ""}
+                    placeholder="State"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label
+                    className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500"
+                    htmlFor="defaultShippingPostalCode"
+                  >
+                    Postal code
+                  </label>
+                  <Input
+                    id="defaultShippingPostalCode"
+                    name="defaultShippingPostalCode"
+                    defaultValue={user?.defaultShippingAddress?.postalCode || ""}
+                    placeholder="Postal code"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label
+                    className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500"
+                    htmlFor="defaultShippingCountry"
+                  >
+                    Country
+                  </label>
+                  <Input
+                    id="defaultShippingCountry"
+                    name="defaultShippingCountry"
+                    defaultValue={user?.defaultShippingAddress?.country || ""}
+                    placeholder="Country"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500"
+                  htmlFor="defaultPaymentMethod"
+                >
+                  Preferred payment method
+                </label>
+                <Select
+                  id="defaultPaymentMethod"
+                  name="defaultPaymentMethod"
+                  defaultValue={user?.defaultPaymentMethod || "cod"}
+                >
+                  {PAYMENT_METHOD_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">

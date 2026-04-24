@@ -5,7 +5,78 @@ const User = require("../models/User");
 const asyncHandler = require("../middleware/asyncHandler");
 const { AppError } = require("../middleware/errorHandler");
 
+const SHIPPING_FEES = {
+  standard: 6.99,
+  express: 14.99,
+};
+const PAYMENT_METHODS = ["cod", "card", "bank_transfer"];
+const DELIVERY_METHODS = Object.keys(SHIPPING_FEES);
+
+const normalizeText = (value) => {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return value.trim();
+};
+
+const normalizeShippingAddress = (input = {}) => ({
+  fullName: normalizeText(input.fullName),
+  phone: normalizeText(input.phone),
+  addressLine1: normalizeText(input.addressLine1),
+  addressLine2: normalizeText(input.addressLine2),
+  city: normalizeText(input.city),
+  state: normalizeText(input.state),
+  postalCode: normalizeText(input.postalCode),
+  country: normalizeText(input.country),
+});
+
+const getMissingShippingFields = (shippingAddress) => {
+  const requiredFields = [
+    ["fullName", "full name"],
+    ["phone", "phone"],
+    ["addressLine1", "address line 1"],
+    ["city", "city"],
+    ["state", "state"],
+    ["postalCode", "postal code"],
+    ["country", "country"],
+  ];
+
+  return requiredFields
+    .filter(([key]) => !shippingAddress[key])
+    .map(([, label]) => label);
+};
+
+const buildLegacyAddress = (shippingAddress) => ([
+  shippingAddress.addressLine1,
+  shippingAddress.addressLine2,
+  shippingAddress.city,
+  shippingAddress.state,
+  shippingAddress.postalCode,
+  shippingAddress.country,
+]
+  .filter(Boolean)
+  .join(", "));
+
 const createOrder = asyncHandler(async (req, res) => {
+  const deliveryMethod = DELIVERY_METHODS.includes(req.body.deliveryMethod)
+    ? req.body.deliveryMethod
+    : "standard";
+  const paymentMethod = PAYMENT_METHODS.includes(req.body.paymentMethod)
+    ? req.body.paymentMethod
+    : "cod";
+  const shippingAddress = normalizeShippingAddress(req.body.shippingAddress);
+  const orderNotes = normalizeText(req.body.orderNotes);
+  const missingShippingFields = getMissingShippingFields(shippingAddress);
+
+  if (missingShippingFields.length > 0) {
+    throw new AppError(
+      `Missing checkout details: ${missingShippingFields.join(", ")}`,
+      400,
+      "INVALID_CHECKOUT_DETAILS",
+    );
+  }
+
   const session = await Order.startSession();
   session.startTransaction();
   try {
@@ -17,7 +88,7 @@ const createOrder = asyncHandler(async (req, res) => {
       throw new AppError("Cart is empty", 400, "EMPTY_CART");
     }
 
-    let totalPrice = 0;
+    let subtotal = 0;
     const orderItems = [];
 
     for (const item of cart.items) {
@@ -29,7 +100,7 @@ const createOrder = asyncHandler(async (req, res) => {
         throw new AppError(`Insufficient stock for ${product.name}`, 400, "INSUFFICIENT_STOCK");
       }
 
-      totalPrice += product.price * item.quantity;
+      subtotal += product.price * item.quantity;
       orderItems.push({
         productId: product._id,
         quantity: item.quantity,
@@ -39,13 +110,24 @@ const createOrder = asyncHandler(async (req, res) => {
       });
     }
 
+    const shippingFee = SHIPPING_FEES[deliveryMethod] || SHIPPING_FEES.standard;
+    const totalPrice = subtotal + shippingFee;
+    const paymentStatus = paymentMethod === "card" ? "paid" : "unpaid";
+    const status = paymentMethod === "card" ? "paid" : "pending";
+
     const [order] = await Order.create(
       [{
         userId: req.user._id,
         items: orderItems,
+        shippingAddress,
+        deliveryMethod,
+        paymentMethod,
+        orderNotes,
+        subtotal,
+        shippingFee,
         totalPrice,
-        status: "pending",
-        paymentStatus: "unpaid",
+        status,
+        paymentStatus,
       }],
       { session },
     );
@@ -64,6 +146,20 @@ const createOrder = asyncHandler(async (req, res) => {
 
     cart.items = [];
     await cart.save({ session });
+
+    if (req.body.saveCheckoutProfile) {
+      await User.findByIdAndUpdate(
+        req.user._id,
+        {
+          phone: shippingAddress.phone,
+          address: buildLegacyAddress(shippingAddress),
+          defaultShippingAddress: shippingAddress,
+          defaultPaymentMethod: paymentMethod,
+        },
+        { session },
+      );
+    }
+
     await session.commitTransaction();
 
     res.status(201).json(order);

@@ -3,6 +3,12 @@ const Category = require("../models/Category");
 const fs = require("fs");
 const path = require("path");
 
+const PRODUCT_DETAIL_POPULATE = [
+  { path: "vendorId", select: "name email" },
+  { path: "categoryId", select: "name" },
+  { path: "reviews.userId", select: "name profileImageUrl" }
+];
+
 const getFilePathFromImageUrl = (imageUrl) => {
   if (!imageUrl || !imageUrl.startsWith("/uploads/")) return null;
   return path.join(__dirname, "..", imageUrl);
@@ -14,6 +20,28 @@ const removeProductImageFile = (imageUrl) => {
     fs.unlinkSync(filePath);
   }
 };
+
+const buildProductDetailQuery = (productId) => Product.findById(productId)
+  .populate(PRODUCT_DETAIL_POPULATE);
+
+const calculateAverageRating = (reviews) => {
+  if (!reviews.length) {
+    return 0;
+  }
+
+  const totalRating = reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0);
+  return totalRating / reviews.length;
+};
+
+const normalizeReviewComment = (comment) => {
+  if (typeof comment !== "string") {
+    return "";
+  }
+
+  return comment.trim();
+};
+
+const isSameId = (left, right) => String(left) === String(right);
 
 // Create Product (Vendor only)
 const createProduct = async (req, res) => {
@@ -138,9 +166,7 @@ const getProductsByVendor = async (req, res) => {
 
 const getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id)
-      .populate("vendorId", "name email")
-      .populate("categoryId", "name");
+    const product = await buildProductDetailQuery(req.params.id);
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
@@ -222,7 +248,9 @@ const deleteProduct = async (req, res) => {
 const addProductReview = async (req, res) => {
   try {
     const { rating, comment } = req.body;
-    if (!rating || rating < 1 || rating > 5) {
+    const ratingValue = Number(rating);
+
+    if (!ratingValue || ratingValue < 1 || ratingValue > 5) {
       return res.status(400).json({ message: "Rating must be between 1 and 5" });
     }
 
@@ -234,23 +262,120 @@ const addProductReview = async (req, res) => {
     const existingReview = product.reviews.find(
       (review) => review.userId.toString() === req.user._id.toString()
     );
+    const nextComment = normalizeReviewComment(comment);
 
     if (existingReview) {
-      existingReview.rating = rating;
-      existingReview.comment = comment || existingReview.comment;
+      existingReview.rating = ratingValue;
+      existingReview.comment = nextComment;
     } else {
       product.reviews.push({
         userId: req.user._id,
-        rating,
-        comment
+        rating: ratingValue,
+        comment: nextComment
       });
     }
 
-    const totalRating = product.reviews.reduce((sum, review) => sum + review.rating, 0);
-    product.averageRating = totalRating / product.reviews.length;
+    product.averageRating = calculateAverageRating(product.reviews);
 
     await product.save();
-    res.json({ message: "Review saved", averageRating: product.averageRating });
+    const hydratedProduct = await buildProductDetailQuery(product._id);
+
+    res.json({
+      message: existingReview ? "Review updated" : "Review added",
+      averageRating: product.averageRating,
+      product: hydratedProduct
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const reactToProductReview = async (req, res) => {
+  try {
+    const { reaction } = req.body;
+
+    if (!["like", "dislike"].includes(reaction)) {
+      return res.status(400).json({ message: "Reaction must be like or dislike" });
+    }
+
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    const review = product.reviews.id(req.params.reviewId);
+    if (!review) {
+      return res.status(404).json({ message: "Review not found" });
+    }
+
+    if (isSameId(review.userId, req.user._id)) {
+      return res.status(400).json({ message: "You cannot react to your own review" });
+    }
+
+    const likeIndex = review.likes.findIndex((userId) => isSameId(userId, req.user._id));
+    const dislikeIndex = review.dislikes.findIndex((userId) => isSameId(userId, req.user._id));
+
+    if (reaction === "like") {
+      if (likeIndex >= 0) {
+        review.likes.splice(likeIndex, 1);
+      } else {
+        if (dislikeIndex >= 0) {
+          review.dislikes.splice(dislikeIndex, 1);
+        }
+        review.likes.push(req.user._id);
+      }
+    }
+
+    if (reaction === "dislike") {
+      if (dislikeIndex >= 0) {
+        review.dislikes.splice(dislikeIndex, 1);
+      } else {
+        if (likeIndex >= 0) {
+          review.likes.splice(likeIndex, 1);
+        }
+        review.dislikes.push(req.user._id);
+      }
+    }
+
+    await product.save();
+    const hydratedProduct = await buildProductDetailQuery(product._id);
+
+    res.json({
+      message: "Reaction saved",
+      product: hydratedProduct
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const deleteProductReview = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    if (!isSameId(product.vendorId, req.user._id)) {
+      return res.status(403).json({ message: "Not authorized to delete reviews for this product" });
+    }
+
+    const review = product.reviews.id(req.params.reviewId);
+    if (!review) {
+      return res.status(404).json({ message: "Review not found" });
+    }
+
+    product.reviews.pull(review._id);
+    product.averageRating = calculateAverageRating(product.reviews);
+
+    await product.save();
+    const hydratedProduct = await buildProductDetailQuery(product._id);
+
+    res.json({
+      message: "Review deleted",
+      averageRating: product.averageRating,
+      product: hydratedProduct
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -277,5 +402,7 @@ module.exports = {
   updateProduct,
   deleteProduct,
   addProductReview,
+  reactToProductReview,
+  deleteProductReview,
   getAllProductsAdmin
 };

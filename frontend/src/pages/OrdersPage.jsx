@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
 import { orderApi } from "../services/api";
+import {
+  formatDeliveryMethod,
+  formatPaymentMethod,
+  formatShippingAddress,
+} from "../services/checkout";
 import { useToast } from "../context/useToast";
 import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
@@ -26,7 +31,11 @@ export default function OrdersPage() {
   };
 
   useEffect(() => {
-    loadOrders();
+    const timerId = setTimeout(() => {
+      loadOrders();
+    }, 0);
+
+    return () => clearTimeout(timerId);
   }, []);
 
   const cancelOrder = async (orderId) => {
@@ -80,6 +89,48 @@ export default function OrdersPage() {
                   ))}
                 </ul>
               </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-extrabold uppercase tracking-widest text-slate-500">
+                    Delivery
+                  </p>
+                  <p className="mt-2 text-sm font-black text-slate-950">
+                    {formatDeliveryMethod(order.deliveryMethod)}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {order.shippingAddress?.fullName || "Recipient"} ·{" "}
+                    {order.shippingAddress?.phone || "No phone"}
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                    {formatShippingAddress(order.shippingAddress) || "No shipping address saved."}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-extrabold uppercase tracking-widest text-slate-500">
+                    Payment
+                  </p>
+                  <p className="mt-2 text-sm font-black text-slate-950">
+                    {formatPaymentMethod(order.paymentMethod)}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Subtotal ${Number(order.subtotal || order.totalPrice || 0).toFixed(2)}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Shipping ${Number(order.shippingFee || 0).toFixed(2)}
+                  </p>
+                </div>
+              </div>
+
+              {order.orderNotes ? (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs font-extrabold uppercase tracking-widest text-slate-500">
+                    Order notes
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-700">{order.orderNotes}</p>
+                </div>
+              ) : null}
 
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs font-semibold text-slate-500">Payment: {order.paymentStatus}</p>

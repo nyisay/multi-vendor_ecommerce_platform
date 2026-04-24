@@ -25,6 +25,7 @@ import TermsPage from "./pages/TermsPage";
 import VendorDashboardPage from "./pages/VendorDashboardPage";
 import VendorOrdersPage from "./pages/VendorOrdersPage";
 import VendorProductsPage from "./pages/VendorProductsPage";
+import WishlistPage from "./pages/WishlistPage";
 
 function RoleHomeRedirect() {
   const { user } = useAuth();
@@ -89,6 +90,15 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["customer"]}>
               <OrdersPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="wishlist"
+          element={
+            <ProtectedRoute allowedRoles={["customer"]}>
+              <WishlistPage />
             </ProtectedRoute>
           }
         />

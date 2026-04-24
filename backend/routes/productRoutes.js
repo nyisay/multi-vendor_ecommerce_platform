@@ -10,6 +10,8 @@ const {
   updateProduct,
   deleteProduct,
   addProductReview,
+  reactToProductReview,
+  deleteProductReview,
   getAllProductsAdmin
 } = require("../controllers/productController");
 const { protect, authorizeRoles } = require("../middleware/authMiddleware");
@@ -37,7 +39,9 @@ router.get("/admin/all", protect, authorizeRoles("admin"), getAllProductsAdmin);
 router.put("/admin/:id", protect, authorizeRoles("admin"), requireObjectIdParam("id"), uploadProductImage.single("image"), updateProduct);
 router.delete("/admin/:id", protect, authorizeRoles("admin"), requireObjectIdParam("id"), deleteProduct);
 
-router.get("/:id", requireObjectIdParam("id"), getProductById);
 router.post("/:id/reviews", protect, authorizeRoles("customer"), requireObjectIdParam("id"), addProductReview);
+router.post("/:id/reviews/:reviewId/reactions", protect, authorizeRoles("customer"), requireObjectIdParam("id"), requireObjectIdParam("reviewId"), reactToProductReview);
+router.delete("/:id/reviews/:reviewId", protect, authorizeRoles("vendor"), requireObjectIdParam("id"), requireObjectIdParam("reviewId"), deleteProductReview);
+router.get("/:id", requireObjectIdParam("id"), getProductById);
 
 module.exports = router;

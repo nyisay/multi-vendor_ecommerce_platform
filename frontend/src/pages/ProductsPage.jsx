@@ -7,6 +7,7 @@ import {
   cartApi,
   getImageUrl,
   productApi,
+  wishlistApi,
 } from "../services/api";
 import { useToast } from "../context/useToast";
 import Button from "../components/ui/Button";
@@ -34,19 +35,32 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [searchInput, setSearchInput] = useState(query);
   const [reloadKey, setReloadKey] = useState(0);
+  const [wishlistIds, setWishlistIds] = useState([]);
+  const [wishlistProductId, setWishlistProductId] = useState("");
 
   useEffect(() => {
-    setSearchInput(query);
+    const timerId = setTimeout(() => {
+      setSearchInput(query);
+    }, 0);
+
+    return () => clearTimeout(timerId);
   }, [query]);
 
   useEffect(() => {
     const timerId = setTimeout(() => {
       if (searchInput !== query) {
-        updateFilters({ q: searchInput });
+        const nextParams = new URLSearchParams(searchParams);
+        if (!searchInput) {
+          nextParams.delete("q");
+        } else {
+          nextParams.set("q", searchInput);
+        }
+        nextParams.set("page", "1");
+        setSearchParams(nextParams);
       }
     }, 350);
     return () => clearTimeout(timerId);
-  }, [searchInput, query]);
+  }, [searchInput, query, searchParams, setSearchParams]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -84,6 +98,35 @@ export default function ProductsPage() {
     loadCategories();
   }, []);
 
+  useEffect(() => {
+    if (user?.role !== "customer") {
+      return undefined;
+    }
+
+    let active = true;
+
+    const loadWishlist = async () => {
+      try {
+        const data = await wishlistApi.getMine();
+        if (active) {
+          setWishlistIds(
+            Array.isArray(data.items) ? data.items.map((item) => item._id) : [],
+          );
+        }
+      } catch {
+        if (active) {
+          setWishlistIds([]);
+        }
+      }
+    };
+
+    loadWishlist();
+
+    return () => {
+      active = false;
+    };
+  }, [user?._id, user?.role]);
+
   function updateFilters(next) {
     const nextParams = new URLSearchParams(searchParams);
     Object.entries(next).forEach(([key, value]) => {
@@ -108,6 +151,28 @@ export default function ProductsPage() {
       showToast("Added to cart", "success");
     } catch (err) {
       showToast(err.message || "Could not add to cart", "error");
+    }
+  };
+
+  const toggleWishlist = async (productId) => {
+    const isSaved = wishlistIds.includes(productId);
+    setWishlistProductId(productId);
+
+    try {
+      const response = isSaved
+        ? await wishlistApi.remove(productId)
+        : await wishlistApi.add(productId);
+      setWishlistIds(
+        Array.isArray(response.items) ? response.items.map((item) => item._id) : [],
+      );
+      showToast(
+        response.message || (isSaved ? "Removed from wishlist" : "Added to wishlist"),
+        "success",
+      );
+    } catch (err) {
+      showToast(err.message || "Could not update wishlist", "error");
+    } finally {
+      setWishlistProductId("");
     }
   };
 
@@ -336,7 +401,10 @@ export default function ProductsPage() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-12">
-            {products.map((product, index) => (
+            {products.map((product, index) => {
+              const isSaved = wishlistIds.includes(product._id);
+
+              return (
               <article
                 key={product._id}
                 className={`group overflow-hidden rounded-[1.8rem] border border-slate-200 bg-white shadow-[0_20px_60px_-42px_rgba(15,23,42,0.32)] transition hover:-translate-y-1 hover:shadow-[0_28px_70px_-36px_rgba(15,23,42,0.38)] ${
@@ -393,13 +461,32 @@ export default function ProductsPage() {
                   </p>
 
                   {user?.role === "customer" && (
-                    <Button onClick={() => addToCart(product._id)} fullWidth>
-                      Add to cart
-                    </Button>
+                    <div className="grid gap-2">
+                      <Button
+                        onClick={() => addToCart(product._id)}
+                        disabled={product.stock <= 0}
+                        fullWidth
+                      >
+                        {product.stock <= 0 ? "Out of stock" : "Add to cart"}
+                      </Button>
+                      <Button
+                        variant={isSaved ? "secondary" : "outline"}
+                        fullWidth
+                        onClick={() => toggleWishlist(product._id)}
+                        disabled={wishlistProductId === product._id}
+                      >
+                        {wishlistProductId === product._id
+                          ? "Updating wishlist..."
+                          : isSaved
+                            ? "Saved in wishlist"
+                            : "Save to wishlist"}
+                      </Button>
+                    </div>
                   )}
                 </div>
               </article>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

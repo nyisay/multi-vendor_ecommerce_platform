@@ -93,6 +93,14 @@ export const productApi = {
   addReview(productId, payload) {
     return api.post(`/products/${productId}/reviews`, payload).then((res) => res.data);
   },
+  reactToReview(productId, reviewId, payload) {
+    return api
+      .post(`/products/${productId}/reviews/${reviewId}/reactions`, payload)
+      .then((res) => res.data);
+  },
+  removeReview(productId, reviewId) {
+    return api.delete(`/products/${productId}/reviews/${reviewId}`).then((res) => res.data);
+  },
   getAllForAdmin() {
     return api.get("/products/admin/all").then((res) => res.data);
   },
@@ -128,9 +136,21 @@ export const cartApi = {
   },
 };
 
+export const wishlistApi = {
+  getMine() {
+    return api.get("/wishlist").then((res) => res.data);
+  },
+  add(productId) {
+    return api.post(`/wishlist/${productId}`).then((res) => res.data);
+  },
+  remove(productId) {
+    return api.delete(`/wishlist/${productId}`).then((res) => res.data);
+  },
+};
+
 export const orderApi = {
-  create() {
-    return api.post("/orders").then((res) => res.data);
+  create(payload) {
+    return api.post("/orders", payload).then((res) => res.data);
   },
   getMine() {
     return api.get("/orders").then((res) => res.data);
