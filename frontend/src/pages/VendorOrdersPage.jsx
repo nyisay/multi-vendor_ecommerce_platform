@@ -50,6 +50,7 @@ export default function VendorOrdersPage() {
   const updateStatus = async (orderId, status) => {
     try {
       await orderApi.updateVendorOrderStatus(orderId, status);
+      window.dispatchEvent(new Event("vendor-orders-changed"));
       showToast("Order status updated", "success");
       await loadOrders();
     } catch (err) {

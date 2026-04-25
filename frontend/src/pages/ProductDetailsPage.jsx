@@ -198,6 +198,7 @@ export default function ProductDetailsPage() {
   const { user } = useAuth();
   const { showToast } = useToast();
   const [product, setProduct] = useState(null);
+  const [activeImage, setActiveImage] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
@@ -237,6 +238,7 @@ export default function ProductDetailsPage() {
         if (active) {
           const nextRecentlyViewed = saveRecentlyViewedProduct(data);
           setProduct(data);
+          setActiveImage(data.imageUrl || "");
           setRelatedProducts(
             (Array.isArray(relatedResponse.items) ? relatedResponse.items : [])
               .filter((item) => item._id !== data._id)
@@ -477,28 +479,41 @@ export default function ProductDetailsPage() {
         <div className="space-y-6 xl:col-span-7">
           <Card className="overflow-hidden rounded-[2rem] border border-slate-200 shadow-[0_28px_80px_-52px_rgba(15,23,42,0.45)]">
             <div className="relative">
-              {product.imageUrl ? (
+              {activeImage ? (
                 <img
-                  src={getImageUrl(product.imageUrl)}
+                  src={getImageUrl(activeImage)}
                   alt={product.name}
-                  className="h-[420px] w-full object-cover sm:h-[520px]"
+                  className="h-[420px] w-full object-cover transition-all duration-500 sm:h-[520px]"
                 />
               ) : (
                 <div className="h-[420px] w-full bg-[linear-gradient(135deg,_#e2e8f0,_#f8fafc_42%,_#cbd5e1)] sm:h-[520px]" />
               )}
 
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/10 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-6 sm:p-7">
-                <div className="rounded-[1.6rem] border border-white/10 bg-white/10 p-4 text-white backdrop-blur">
+              {/* Thumbnail Gallery Overlay */}
+              {product.imageUrls && product.imageUrls.length > 1 && (
+                <div className="absolute bottom-6 right-6 flex gap-2">
+                  {product.imageUrls.map((url, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveImage(url)}
+                      className={`h-16 w-16 overflow-hidden rounded-xl border-2 transition-all ${
+                        activeImage === url ? "border-amber-400 ring-2 ring-amber-400/50" : "border-white/20 hover:border-white/50"
+                      }`}
+                    >
+                      <img src={getImageUrl(url)} alt="" className="h-full w-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-slate-950 via-slate-950/5 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-6 pointer-events-none sm:p-7">
+                <div className="rounded-[1.6rem] border border-white/10 bg-white/10 p-4 text-white backdrop-blur max-w-[280px]">
                   <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/60">
                     Vendor spotlight
                   </p>
                   <p className="mt-2 text-xl font-black tracking-tight text-white">
                     {getVendorName(product)}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-slate-200">
-                    Product presentation should feel premium before the customer
-                    even decides to purchase.
                   </p>
                 </div>
               </div>

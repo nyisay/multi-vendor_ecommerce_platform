@@ -202,7 +202,16 @@ const getVendorOrders = asyncHandler(async (req, res) => {
     .populate("userId", "name email")
     .populate("items.productId", "name")
     .sort({ createdAt: -1 });
-  res.json(orders);
+
+  const vendorOrders = orders.map((order) => {
+    const normalizedOrder = order.toObject();
+    normalizedOrder.items = normalizedOrder.items.filter(
+      (item) => item.vendorId?.toString() === req.user._id.toString(),
+    );
+    return normalizedOrder;
+  });
+
+  res.json(vendorOrders);
 });
 
 const updateVendorOrderStatus = asyncHandler(async (req, res) => {

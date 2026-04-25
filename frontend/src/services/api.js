@@ -33,6 +33,29 @@ api.interceptors.response.use(
   },
 );
 
+const buildMultipartFormData = (payload) => {
+  const formData = new FormData();
+
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "") {
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach((entry) => {
+        if (entry !== undefined && entry !== null && entry !== "") {
+          formData.append(key, entry);
+        }
+      });
+      return;
+    }
+
+    formData.append(key, value);
+  });
+
+  return formData;
+};
+
 export const authApi = {
   register(payload) {
     return api.post("/users/register", payload).then((res) => res.data);
@@ -67,25 +90,13 @@ export const productApi = {
     return api.post("/products", payload).then((res) => res.data);
   },
   createWithImage(payload) {
-    const formData = new FormData();
-    Object.entries(payload).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== "") {
-        formData.append(key, value);
-      }
-    });
-    return api.post("/products", formData).then((res) => res.data);
+    return api.post("/products", buildMultipartFormData(payload)).then((res) => res.data);
   },
   update(productId, payload) {
     return api.put(`/products/${productId}`, payload).then((res) => res.data);
   },
   updateWithImage(productId, payload) {
-    const formData = new FormData();
-    Object.entries(payload).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== "") {
-        formData.append(key, value);
-      }
-    });
-    return api.put(`/products/${productId}`, formData).then((res) => res.data);
+    return api.put(`/products/${productId}`, buildMultipartFormData(payload)).then((res) => res.data);
   },
   remove(productId) {
     return api.delete(`/products/${productId}`).then((res) => res.data);

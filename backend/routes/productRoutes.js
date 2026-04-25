@@ -15,8 +15,13 @@ const {
   getAllProductsAdmin
 } = require("../controllers/productController");
 const { protect, authorizeRoles } = require("../middleware/authMiddleware");
-const { uploadProductImage } = require("../middleware/uploadMiddleware");
+const { uploadProductImages } = require("../middleware/uploadMiddleware");
 const { requireObjectIdParam, validateCreateProduct } = require("../middleware/validationMiddleware");
+
+const productGalleryUpload = uploadProductImages.fields([
+  { name: "image", maxCount: 1 },
+  { name: "images", maxCount: 4 }
+]);
 
 // Public route
 router.get("/", getProducts);
@@ -26,17 +31,17 @@ router.get("/vendor/:vendorId", getProductsByVendor);
 router.get("/my-products", protect, authorizeRoles("vendor"), getMyProducts);
 
 // Create product (vendor only)
-router.post("/", protect, authorizeRoles("vendor"), uploadProductImage.single("image"), validateCreateProduct, createProduct);
+router.post("/", protect, authorizeRoles("vendor"), productGalleryUpload, validateCreateProduct, createProduct);
 
 // Update product (vendor only)
-router.put("/:id", protect, authorizeRoles("vendor"), requireObjectIdParam("id"), uploadProductImage.single("image"), updateProduct);
+router.put("/:id", protect, authorizeRoles("vendor"), requireObjectIdParam("id"), productGalleryUpload, updateProduct);
 
 // Delete product (vendor only)
 router.delete("/:id", protect, authorizeRoles("vendor"), requireObjectIdParam("id"), deleteProduct);
 
 // Admin product management
 router.get("/admin/all", protect, authorizeRoles("admin"), getAllProductsAdmin);
-router.put("/admin/:id", protect, authorizeRoles("admin"), requireObjectIdParam("id"), uploadProductImage.single("image"), updateProduct);
+router.put("/admin/:id", protect, authorizeRoles("admin"), requireObjectIdParam("id"), productGalleryUpload, updateProduct);
 router.delete("/admin/:id", protect, authorizeRoles("admin"), requireObjectIdParam("id"), deleteProduct);
 
 router.post("/:id/reviews", protect, authorizeRoles("customer"), requireObjectIdParam("id"), addProductReview);

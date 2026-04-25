@@ -17,8 +17,8 @@ export default function VendorProductsPage() {
   const [categories, setCategories] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState("");
-  const [imageFile, setImageFile] = useState(null);
-  const [removeImage, setRemoveImage] = useState(false);
+  const [newImageFiles, setNewImageFiles] = useState([]);
+  const [existingImageUrls, setExistingImageUrls] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -56,8 +56,30 @@ export default function VendorProductsPage() {
   const resetForm = () => {
     setForm(initialForm);
     setEditingId("");
-    setImageFile(null);
-    setRemoveImage(false);
+    setNewImageFiles([]);
+    setExistingImageUrls([]);
+  };
+
+  const onFileChange = (event) => {
+    const files = Array.from(event.target.files || []);
+    const totalCurrentImages = newImageFiles.length + existingImageUrls.length;
+    
+    if (totalCurrentImages + files.length > 4) {
+      showToast("Maximum 4 images allowed", "error");
+      return;
+    }
+    
+    setNewImageFiles((prev) => [...prev, ...files]);
+    // Clear input so same file can be selected again if removed
+    event.target.value = "";
+  };
+
+  const removeNewImage = (index) => {
+    setNewImageFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingImage = (url) => {
+    setExistingImageUrls((prev) => prev.filter((img) => img !== url));
   };
 
   const submitCreate = async (event) => {
@@ -71,11 +93,12 @@ export default function VendorProductsPage() {
         stock: Number(form.stock),
         categoryId: form.categoryId,
         description: form.description,
-        ...(imageFile ? { image: imageFile } : {}),
-        ...(removeImage ? { removeImage: "true" } : {}),
+        images: newImageFiles,
       };
 
       if (editingId) {
+        // When editing, we also need to tell the backend which existing images to keep
+        payload.keepImages = existingImageUrls;
         await productApi.updateWithImage(editingId, payload);
         showToast("Product updated", "success");
       } else {
@@ -99,8 +122,8 @@ export default function VendorProductsPage() {
       categoryId: product.categoryId?._id || "",
       description: product.description || "",
     });
-    setImageFile(null);
-    setRemoveImage(false);
+    setNewImageFiles([]);
+    setExistingImageUrls(product.imageUrls || (product.imageUrl ? [product.imageUrl] : []));
   };
 
   const deleteProduct = async (productId) => {
@@ -178,24 +201,55 @@ export default function VendorProductsPage() {
             className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-amber-300 focus:bg-amber-50/30 focus:outline-none md:col-span-2"
             rows={3}
           />
-          <div className="space-y-2 md:col-span-2">
-            <label className="block text-sm font-semibold text-slate-700">Product image</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(event) => setImageFile(event.target.files?.[0] || null)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700"
-            />
-            {editingId && (
-              <label className="inline-flex items-center gap-2 text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={removeImage}
-                  onChange={(event) => setRemoveImage(event.target.checked)}
-                />
-                Remove current image
-              </label>
-            )}
+          <div className="space-y-3 md:col-span-2">
+            <label className="block text-sm font-semibold text-slate-700">Product images (Max 4)</label>
+            
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {/* Existing Images */}
+              {existingImageUrls.map((url, idx) => (
+                <div key={`existing-${idx}`} className="group relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                  <img src={getImageUrl(url)} alt="" className="h-full w-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeExistingImage(url)}
+                    className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-rose-600 text-white opacity-0 transition group-hover:opacity-100"
+                  >
+                    ×
+                  </button>
+                  <span className="absolute bottom-1 left-1 rounded bg-slate-900/50 px-1 text-[10px] text-white">Current</span>
+                </div>
+              ))}
+
+              {/* New Image Previews */}
+              {newImageFiles.map((file, idx) => (
+                <div key={`new-${idx}`} className="group relative aspect-square overflow-hidden rounded-xl border border-amber-200 bg-amber-50">
+                  <img src={URL.createObjectURL(file)} alt="" className="h-full w-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeNewImage(idx)}
+                    className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-rose-600 text-white opacity-0 transition group-hover:opacity-100"
+                  >
+                    ×
+                  </button>
+                  <span className="absolute bottom-1 left-1 rounded bg-amber-600/80 px-1 text-[10px] text-white">New</span>
+                </div>
+              ))}
+
+              {/* Upload Button */}
+              {(existingImageUrls.length + newImageFiles.length) < 4 && (
+                <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 transition hover:border-amber-400 hover:bg-amber-50">
+                  <span className="text-2xl text-slate-400">+</span>
+                  <span className="text-[10px] font-semibold text-slate-500">Add Photo</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={onFileChange}
+                    className="hidden"
+                  />
+                </label>
+              )}
+            </div>
           </div>
           <div className="flex gap-2 md:col-span-2">
             <button type="submit" className="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">

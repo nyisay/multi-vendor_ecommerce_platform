@@ -33,6 +33,14 @@ const reviewSchema = new mongoose.Schema({
   timestamps: true
 });
 
+const normalizeProductImageUrls = (imageUrls, imageUrl) => {
+  const baseImageUrls = Array.isArray(imageUrls) && imageUrls.length
+    ? imageUrls
+    : [imageUrl];
+
+  return Array.from(new Set(baseImageUrls.filter(Boolean))).slice(0, 4);
+};
+
 const productSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -49,6 +57,10 @@ const productSchema = new mongoose.Schema({
   },
   imageUrl: {
     type: String
+  },
+  imageUrls: {
+    type: [String],
+    default: []
   },
   stock: {
     type: Number,
@@ -72,6 +84,13 @@ const productSchema = new mongoose.Schema({
   }
 }, {
   timestamps: true
+});
+
+productSchema.pre("save", function syncProductImageFields(next) {
+  const normalizedImageUrls = normalizeProductImageUrls(this.imageUrls, this.imageUrl);
+  this.imageUrls = normalizedImageUrls;
+  this.imageUrl = normalizedImageUrls[0];
+  next();
 });
 
 productSchema.index({ createdAt: -1 });

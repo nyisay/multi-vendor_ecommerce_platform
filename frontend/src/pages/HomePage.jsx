@@ -425,7 +425,7 @@ export default function HomePage() {
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
                       {item.vendorName || "Vendor"}
                     </p>
-                    <h3 className="mt-2 text-2xl font-black tracking-tight text-white">
+                    <h3 className="mt-2 text-2xl font-black tracking-tight !text-gray-100">
                       {item.name}
                     </h3>
                   </div>
@@ -464,7 +464,7 @@ export default function HomePage() {
           </div>
           <Link
             to="/products"
-            className="rounded-full bg-slate-950 px-6 py-3 text-center text-sm font-semibold text-white transition hover:bg-slate-800"
+            className="rounded-full bg-slate-950 px-6 py-3 text-center text-sm font-semibold !text-white transition hover:bg-slate-800 mb-14"
           >
             Browse products
           </Link>
@@ -499,7 +499,7 @@ export default function HomePage() {
             <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-white/55">
               One platform, all roles
             </p>
-            <h2 className="mt-3 max-w-2xl text-3xl font-black tracking-[-0.03em] text-white sm:text-4xl">
+            <h2 className="mt-3 max-w-2xl text-3xl font-black tracking-[-0.03em] !text-pink-200 sm:text-4xl">
               Shopping, selling, and storefront operations in one polished flow
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">

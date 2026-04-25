@@ -21,6 +21,68 @@ const removeProductImageFile = (imageUrl) => {
   }
 };
 
+const normalizeProductImageUrls = (imageUrls, imageUrl) => {
+  const baseImageUrls = Array.isArray(imageUrls) && imageUrls.length
+    ? imageUrls
+    : [imageUrl];
+
+  return Array.from(new Set(baseImageUrls.filter(Boolean))).slice(0, 4);
+};
+
+const syncProductImageFields = (product, imageUrls) => {
+  const normalizedImageUrls = normalizeProductImageUrls(imageUrls, undefined);
+  product.imageUrls = normalizedImageUrls;
+  product.imageUrl = normalizedImageUrls[0];
+  return product;
+};
+
+const getProductImageUrls = (product) =>
+  normalizeProductImageUrls(product?.imageUrls, product?.imageUrl);
+
+const removeProductImageFiles = (imageUrls) => {
+  Array.from(new Set((Array.isArray(imageUrls) ? imageUrls : [imageUrls]).filter(Boolean)))
+    .forEach(removeProductImageFile);
+};
+
+const getUploadedProductImageUrls = (req) => {
+  const imageFiles = [];
+
+  if (Array.isArray(req.files)) {
+    imageFiles.push(...req.files);
+  } else if (req.files && typeof req.files === "object") {
+    if (Array.isArray(req.files.images)) {
+      imageFiles.push(...req.files.images);
+    }
+
+    if (Array.isArray(req.files.image)) {
+      imageFiles.push(...req.files.image);
+    }
+  }
+
+  return imageFiles.map((file) => `/uploads/${file.filename}`).slice(0, 4);
+};
+
+const withProductImageGallery = (product) => {
+  if (!product) {
+    return product;
+  }
+
+  const normalizedImageUrls = getProductImageUrls(product);
+
+  if (typeof product.toObject === "function") {
+    const normalizedProduct = product.toObject();
+    normalizedProduct.imageUrls = normalizedImageUrls;
+    normalizedProduct.imageUrl = normalizedImageUrls[0];
+    return normalizedProduct;
+  }
+
+  return {
+    ...product,
+    imageUrls: normalizedImageUrls,
+    imageUrl: normalizedImageUrls[0]
+  };
+};
+
 const buildProductDetailQuery = (productId) => Product.findById(productId)
   .populate(PRODUCT_DETAIL_POPULATE);
 
@@ -90,6 +152,7 @@ const buildCatalogBaseFilter = ({ category, q, stockStatus, minRating }) => {
 const createProduct = async (req, res) => {
   try {
     const { name, price, description, stock, categoryId } = req.body;
+    const uploadedImageUrls = getUploadedProductImageUrls(req);
 
     const category = await Category.findById(categoryId);
     if (!category) {
@@ -106,11 +169,12 @@ const createProduct = async (req, res) => {
       description,
       stock,
       categoryId,
-      imageUrl: req.file ? `/uploads/${req.file.filename}` : undefined,
+      imageUrl: uploadedImageUrls[0],
+      imageUrls: uploadedImageUrls,
       vendorId: req.user._id //from JWT
     });
 
-    res.status(201).json(product);
+    res.status(201).json(withProductImageGallery(product));
 
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -214,7 +278,7 @@ const getProducts = async (req, res) => {
     });
 
     res.json({
-      items: products,
+      items: products.map(withProductImageGallery),
       filters: {
         vendors: Array.from(discoverySummary.vendors.values()).sort((left, right) =>
           left.name.localeCompare(right.name)
@@ -243,7 +307,7 @@ const getMyProducts = async (req, res) => {
     const products = await Product.find({ vendorId: req.user._id })
       .populate("categoryId", "name");
 
-    res.json(products);
+    res.json(products.map(withProductImageGallery));
 
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -255,7 +319,7 @@ const getProductsByVendor = async (req, res) => {
     const products = await Product.find({ vendorId: req.params.vendorId })
       .populate("categoryId", "name")
       .populate("vendorId", "name");
-    res.json(products);
+    res.json(products.map(withProductImageGallery));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -269,7 +333,7 @@ const getProductById = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    res.json(product);
+    res.json(withProductImageGallery(product));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -279,7 +343,8 @@ const getProductById = async (req, res) => {
 //update
 const updateProduct = async (req, res) => {
   try {
-    const { name, price, description, stock, categoryId, removeImage } = req.body;
+    const { name, price, description, stock, categoryId, removeImage, keepImages } = req.body;
+    const uploadedImageUrls = getUploadedProductImageUrls(req);
 
     const product = await Product.findById(req.params.id);
 
@@ -298,19 +363,32 @@ const updateProduct = async (req, res) => {
     product.description = description || product.description;
     product.stock = stock ?? product.stock;
     product.categoryId = categoryId || product.categoryId;
-    if (removeImage === "true" || removeImage === true) {
-      removeProductImageFile(product.imageUrl);
-      product.imageUrl = undefined;
+
+    const currentImageUrls = getProductImageUrls(product);
+    let nextImageUrls = [...currentImageUrls];
+
+    // 1. Handle keepImages if provided (filtering out removed ones)
+    if (keepImages) {
+      const imagesToKeep = Array.isArray(keepImages) ? keepImages : [keepImages];
+      const imagesToRemove = currentImageUrls.filter(img => !imagesToKeep.includes(img));
+      removeProductImageFiles(imagesToRemove);
+      nextImageUrls = imagesToKeep;
+    } else if (removeImage === "true" || removeImage === true) {
+      // 2. Handle legacy removeImage (remove everything)
+      removeProductImageFiles(currentImageUrls);
+      nextImageUrls = [];
     }
 
-    if (req.file) {
-      removeProductImageFile(product.imageUrl);
-      product.imageUrl = `/uploads/${req.file.filename}`;
+    // 3. Add new uploaded images
+    if (uploadedImageUrls.length) {
+      nextImageUrls = [...nextImageUrls, ...uploadedImageUrls];
     }
+
+    syncProductImageFields(product, nextImageUrls);
 
     const updatedProduct = await product.save();
 
-    res.json(updatedProduct);
+    res.json(withProductImageGallery(updatedProduct));
 
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -332,7 +410,7 @@ const deleteProduct = async (req, res) => {
       return res.status(403).json({ message: "Not authorized to delete this product" });
     }
 
-    removeProductImageFile(product.imageUrl);
+    removeProductImageFiles(getProductImageUrls(product));
     await product.deleteOne();
 
     res.json({ message: "Product deleted successfully" });
@@ -380,7 +458,7 @@ const addProductReview = async (req, res) => {
     res.json({
       message: existingReview ? "Review updated" : "Review added",
       averageRating: product.averageRating,
-      product: hydratedProduct
+      product: withProductImageGallery(hydratedProduct)
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -439,7 +517,7 @@ const reactToProductReview = async (req, res) => {
 
     res.json({
       message: "Reaction saved",
-      product: hydratedProduct
+      product: withProductImageGallery(hydratedProduct)
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -471,7 +549,7 @@ const deleteProductReview = async (req, res) => {
     res.json({
       message: "Review deleted",
       averageRating: product.averageRating,
-      product: hydratedProduct
+      product: withProductImageGallery(hydratedProduct)
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -484,7 +562,7 @@ const getAllProductsAdmin = async (req, res) => {
       .populate("vendorId", "name email")
       .populate("categoryId", "name")
       .sort({ createdAt: -1 });
-    res.json(products);
+    res.json(products.map(withProductImageGallery));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

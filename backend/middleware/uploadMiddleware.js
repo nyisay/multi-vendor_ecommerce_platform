@@ -24,7 +24,7 @@ const fileFilter = (_req, file, cb) => {
   cb(new Error("Only image files are allowed"), false);
 };
 
-const uploadProductImage = multer({
+const uploadProductImages = multer({
   storage,
   fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 },
@@ -36,4 +36,4 @@ const uploadProfileAssets = multer({
   limits: { fileSize: 8 * 1024 * 1024 },
 });
 
-module.exports = { uploadProductImage, uploadProfileAssets };
+module.exports = { uploadProductImages, uploadProfileAssets };
