@@ -3,7 +3,10 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
+import PasswordField from "../components/ui/PasswordField";
 import { Card, CardBody } from "../components/ui/Card";
+import { MailIcon, ShieldIcon } from "../components/ui/IconGlyphs";
+import { isValidEmail } from "../utils/authValidation";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -22,6 +25,12 @@ export default function LoginPage() {
   const onSubmit = async (event) => {
     event.preventDefault();
     setError("");
+
+    if (!isValidEmail(form.email)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -37,6 +46,9 @@ export default function LoginPage() {
   return (
     <section className="mx-auto max-w-md space-y-6">
       <div className="rounded-[1.8rem] border border-slate-200 bg-[linear-gradient(180deg,_#fffaf0_0%,_#ffffff_100%)] px-6 py-6 text-center shadow-[0_20px_55px_-42px_rgba(15,23,42,0.4)]">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-[0_18px_35px_-22px_rgba(15,23,42,0.8)]">
+          <ShieldIcon className="h-5 w-5" />
+        </div>
         <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-500">
           Welcome back
         </p>
@@ -71,11 +83,12 @@ export default function LoginPage() {
                 id="email"
                 name="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="olivia.nguyen@example.com"
                 value={form.email}
                 onChange={onChange}
                 required
                 autoComplete="email"
+                leadingIcon={<MailIcon className="h-4.5 w-4.5" />}
               />
             </div>
 
@@ -86,16 +99,23 @@ export default function LoginPage() {
               >
                 Password
               </label>
-              <Input
+              <PasswordField
                 id="password"
                 name="password"
-                type="password"
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 value={form.password}
                 onChange={onChange}
                 required
                 autoComplete="current-password"
               />
+              <div className="flex justify-end">
+                <Link
+                  to="/forgot-password"
+                  className="text-xs font-semibold text-slate-950 underline decoration-slate-300 underline-offset-4 hover:decoration-amber-300"
+                >
+                  Forgot password?
+                </Link>
+              </div>
             </div>
 
             {error && (

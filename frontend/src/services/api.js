@@ -2,11 +2,15 @@ import axios from "axios";
 
 export const TOKEN_KEY = "mve_token";
 
+const envApiUrl = import.meta.env.VITE_API_URL?.trim();
+const API_BASE_URL = envApiUrl || "/api";
+const ASSET_HOST = envApiUrl ? envApiUrl.replace(/\/api\/?$/, "") : "";
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+  baseURL: API_BASE_URL,
 });
 
-export const ASSET_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/api\/?$/, "");
+export const ASSET_BASE_URL = ASSET_HOST;
 export const getImageUrl = (imagePath) => {
   if (!imagePath) return "";
   if (imagePath.startsWith("http")) return imagePath;
@@ -70,6 +74,12 @@ export const authApi = {
     return api
       .put("/users/profile", payload, payload instanceof FormData ? {} : undefined)
       .then((res) => res.data);
+  },
+  forgotPassword(email) {
+    return api.post("/users/forgotpassword", { email }).then((res) => res.data);
+  },
+  resetPassword(payload) {
+    return api.put("/users/resetpassword", payload).then((res) => res.data);
   },
 };
 
@@ -192,6 +202,9 @@ export const orderApi = {
 export const adminApi = {
   getUsers() {
     return api.get("/users").then((res) => res.data);
+  },
+  updateUserBanStatus(userId, isBanned) {
+    return api.put(`/users/${userId}/ban`, { isBanned }).then((res) => res.data);
   },
   getVendors(status = "") {
     return api

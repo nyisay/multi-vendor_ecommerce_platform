@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 
+const MAX_PRODUCT_IMAGES = 6;
+
 const reviewSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -38,7 +40,7 @@ const normalizeProductImageUrls = (imageUrls, imageUrl) => {
     ? imageUrls
     : [imageUrl];
 
-  return Array.from(new Set(baseImageUrls.filter(Boolean))).slice(0, 4);
+  return Array.from(new Set(baseImageUrls.filter(Boolean))).slice(0, MAX_PRODUCT_IMAGES);
 };
 
 const productSchema = new mongoose.Schema({
@@ -86,11 +88,10 @@ const productSchema = new mongoose.Schema({
   timestamps: true
 });
 
-productSchema.pre("save", function syncProductImageFields(next) {
+productSchema.pre("save", function syncProductImageFields() {
   const normalizedImageUrls = normalizeProductImageUrls(this.imageUrls, this.imageUrl);
   this.imageUrls = normalizedImageUrls;
   this.imageUrl = normalizedImageUrls[0];
-  next();
 });
 
 productSchema.index({ createdAt: -1 });

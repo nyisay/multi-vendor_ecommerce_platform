@@ -1,19 +1,27 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const fs = require("fs");
-const path = require("path");
+const crypto = require("crypto");
+const sendEmail = require("../utils/sendEmail");
+const {
+  buildUserAssetObjectPath,
+  deleteObjectByPublicUrl,
+  uploadImageBuffer,
+} = require("../utils/storageService");
+const {
+  normalizeText,
+  normalizeEmail,
+  getPasswordValidationError,
+} = require("../utils/authValidation");
 
 const getToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "1d" });
 const PAYMENT_METHODS = ["cod", "card", "bank_transfer"];
+const PASSWORD_RESET_EXPIRY_MS = 10 * 60 * 1000;
 
-const normalizeText = (value) => {
-  if (typeof value !== "string") {
-    return "";
-  }
+const hashVerificationCode = (code) =>
+  crypto.createHash("sha256").update(String(code || "")).digest("hex");
 
-  return value.trim();
-};
+const createVerificationCode = () => String(crypto.randomInt(100000, 1000000));
 
 const getStructuredDefaultShippingAddress = (source = {}) => ({
   fullName: normalizeText(source.fullName),
@@ -26,24 +34,35 @@ const getStructuredDefaultShippingAddress = (source = {}) => ({
   country: normalizeText(source.country),
 });
 
-const getFilePathFromImageUrl = (imageUrl) => {
-  if (!imageUrl || !imageUrl.startsWith("/uploads/")) return null;
-  return path.join(__dirname, "..", imageUrl);
-};
-
-const removeImageFile = (imageUrl) => {
-  const filePath = getFilePathFromImageUrl(imageUrl);
-  if (filePath && fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
-  }
-};
+const toPublicUser = (user) => ({
+  _id: user._id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  vendorStatus: user.vendorStatus,
+  isBanned: Boolean(user.isBanned),
+  shopName: user.shopName,
+  phone: user.phone,
+  address: user.address,
+  defaultShippingAddress: getStructuredDefaultShippingAddress(user.defaultShippingAddress),
+  defaultPaymentMethod: user.defaultPaymentMethod || "cod",
+  profileImageUrl: user.profileImageUrl,
+  profileTheme: user.profileTheme,
+  profileCardBackgroundUrl: user.profileCardBackgroundUrl,
+});
 
 // Register User
 const registerUser = async (req, res) => {
   try {
     const { name, email, password, role, shopName, phone, address } = req.body;
+    const normalizedEmail = normalizeEmail(email);
+    const passwordError = getPasswordValidationError(password);
 
-    const userExists = await User.findOne({ email });
+    if (passwordError) {
+      return res.status(400).json({ message: passwordError });
+    }
+
+    const userExists = await User.findOne({ email: normalizedEmail });
 
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
@@ -65,7 +84,7 @@ const registerUser = async (req, res) => {
 
     const user = await User.create({
       name,
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
       role: finalRole,
       vendorStatus,
@@ -81,7 +100,8 @@ const registerUser = async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
-      vendorStatus: user.vendorStatus
+      vendorStatus: user.vendorStatus,
+      isBanned: user.isBanned
     });
 
   } catch (error) {
@@ -92,8 +112,9 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
+    const normalizedEmail = normalizeEmail(email);
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
       return res.status(400).json({ message: "Invalid email or password" });
@@ -105,6 +126,10 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
+    if (user.isBanned) {
+      return res.status(403).json({ message: "Your account has been banned" });
+    }
+
     if (user.role === "vendor" && user.vendorStatus !== "approved") {
       return res.status(403).json({ message: "Vendor account is pending admin approval" });
     }
@@ -112,7 +137,8 @@ const loginUser = async (req, res) => {
     res.json({
       token: getToken(user._id),
       role: user.role,
-      vendorStatus: user.vendorStatus
+      vendorStatus: user.vendorStatus,
+      isBanned: user.isBanned
     });
 
   } catch (error) {
@@ -121,21 +147,7 @@ const loginUser = async (req, res) => {
 };
 
 const getMyProfile = async (req, res) => {
-    res.json({
-      _id: req.user._id,
-      name: req.user.name,
-    email: req.user.email,
-    role: req.user.role,
-    vendorStatus: req.user.vendorStatus,
-      shopName: req.user.shopName,
-      phone: req.user.phone,
-      address: req.user.address,
-      defaultShippingAddress: getStructuredDefaultShippingAddress(req.user.defaultShippingAddress),
-      defaultPaymentMethod: req.user.defaultPaymentMethod || "cod",
-      profileImageUrl: req.user.profileImageUrl,
-      profileTheme: req.user.profileTheme,
-      profileCardBackgroundUrl: req.user.profileCardBackgroundUrl,
-  });
+    res.json(toPublicUser(req.user));
 };
 
 const updateMyProfile = async (req, res) => {
@@ -145,10 +157,13 @@ const updateMyProfile = async (req, res) => {
       phone,
       address,
       shopName,
-      password,
+      password: legacyPassword,
       profileTheme,
       removeProfileImage,
       removeProfileBackground,
+      currentPassword,
+      newPassword,
+      confirmNewPassword,
       defaultShippingFullName,
       defaultShippingPhone,
       defaultShippingAddressLine1,
@@ -160,10 +175,14 @@ const updateMyProfile = async (req, res) => {
       defaultPaymentMethod,
     } = req.body;
     const user = await User.findById(req.user._id);
+    const requestedPassword = String(newPassword || legacyPassword || "");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+
+    const previousProfileImageUrl = user.profileImageUrl;
+    const previousProfileBackgroundUrl = user.profileCardBackgroundUrl;
 
     if (name !== undefined) user.name = name;
     if (phone !== undefined) user.phone = phone;
@@ -188,50 +207,104 @@ const updateMyProfile = async (req, res) => {
       user.defaultPaymentMethod = defaultPaymentMethod;
     }
 
-    if (password) {
+    if (requestedPassword || currentPassword || confirmNewPassword) {
+      if (!currentPassword) {
+        return res.status(400).json({ message: "Current password is required to change your password" });
+      }
+
+      const isCurrentPasswordMatch = await bcrypt.compare(String(currentPassword), user.password);
+      if (!isCurrentPasswordMatch) {
+        return res.status(400).json({ message: "Current password is incorrect" });
+      }
+
+      if (!requestedPassword) {
+        return res.status(400).json({ message: "New password is required" });
+      }
+
+      const passwordError = getPasswordValidationError(requestedPassword);
+      if (passwordError) {
+        return res.status(400).json({ message: passwordError });
+      }
+
+      if (requestedPassword !== String(confirmNewPassword || "")) {
+        return res.status(400).json({ message: "New password and confirm password do not match" });
+      }
+
+      const isSamePassword = await bcrypt.compare(requestedPassword, user.password);
+      if (isSamePassword) {
+        return res.status(400).json({ message: "New password must be different from your current password" });
+      }
+
       const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(password, salt);
+      user.password = await bcrypt.hash(requestedPassword, salt);
     }
 
-    if (removeProfileImage === "true" || removeProfileImage === true) {
-      removeImageFile(user.profileImageUrl);
-      user.profileImageUrl = undefined;
-    }
-
-    if (removeProfileBackground === "true" || removeProfileBackground === true) {
-      removeImageFile(user.profileCardBackgroundUrl);
-      user.profileCardBackgroundUrl = undefined;
-    }
+    let uploadedProfileImageUrl;
+    let uploadedProfileBackgroundUrl;
 
     const profileImageFile = req.files?.profileImage?.[0];
     if (profileImageFile) {
-      removeImageFile(user.profileImageUrl);
-      user.profileImageUrl = `/uploads/${profileImageFile.filename}`;
+      uploadedProfileImageUrl = await uploadImageBuffer({
+        buffer: profileImageFile.buffer,
+        mimeType: profileImageFile.mimetype,
+        objectPath: buildUserAssetObjectPath(user._id, "profile", profileImageFile.originalname),
+      });
     }
 
     const profileBackgroundFile = req.files?.profileCardBackground?.[0];
     if (profileBackgroundFile) {
-      removeImageFile(user.profileCardBackgroundUrl);
-      user.profileCardBackgroundUrl = `/uploads/${profileBackgroundFile.filename}`;
+      uploadedProfileBackgroundUrl = await uploadImageBuffer({
+        buffer: profileBackgroundFile.buffer,
+        mimeType: profileBackgroundFile.mimetype,
+        objectPath: buildUserAssetObjectPath(user._id, "background", profileBackgroundFile.originalname),
+      });
     }
 
-    const updated = await user.save();
+    const profileImageShouldBeDeletedAfterSave =
+      Boolean(previousProfileImageUrl) && ((removeProfileImage === "true" || removeProfileImage === true) || profileImageFile);
 
-    res.json({
-      _id: updated._id,
-      name: updated.name,
-      email: updated.email,
-      role: updated.role,
-      vendorStatus: updated.vendorStatus,
-      shopName: updated.shopName,
-      phone: updated.phone,
-      address: updated.address,
-      defaultShippingAddress: getStructuredDefaultShippingAddress(updated.defaultShippingAddress),
-      defaultPaymentMethod: updated.defaultPaymentMethod || "cod",
-      profileImageUrl: updated.profileImageUrl,
-      profileTheme: updated.profileTheme,
-      profileCardBackgroundUrl: updated.profileCardBackgroundUrl,
-    });
+    const profileBackgroundShouldBeDeletedAfterSave =
+      Boolean(previousProfileBackgroundUrl) && ((removeProfileBackground === "true" || removeProfileBackground === true) || profileBackgroundFile);
+
+    if (removeProfileImage === "true" || removeProfileImage === true) {
+      user.profileImageUrl = undefined;
+    }
+
+    if (removeProfileBackground === "true" || removeProfileBackground === true) {
+      user.profileCardBackgroundUrl = undefined;
+    }
+
+    if (uploadedProfileImageUrl) {
+      user.profileImageUrl = uploadedProfileImageUrl;
+    }
+
+    if (uploadedProfileBackgroundUrl) {
+      user.profileCardBackgroundUrl = uploadedProfileBackgroundUrl;
+    }
+
+    try {
+      const updated = await user.save();
+
+      if (profileImageShouldBeDeletedAfterSave) {
+        await deleteObjectByPublicUrl(previousProfileImageUrl);
+      }
+
+      if (profileBackgroundShouldBeDeletedAfterSave) {
+        await deleteObjectByPublicUrl(previousProfileBackgroundUrl);
+      }
+
+      res.json(toPublicUser(updated));
+    } catch (error) {
+      if (uploadedProfileImageUrl) {
+        await deleteObjectByPublicUrl(uploadedProfileImageUrl);
+      }
+
+      if (uploadedProfileBackgroundUrl) {
+        await deleteObjectByPublicUrl(uploadedProfileBackgroundUrl);
+      }
+
+      throw error;
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -254,6 +327,99 @@ const getVendors = async (req, res) => {
 
     const vendors = await User.find(filter).select("-password").sort({ createdAt: -1 });
     res.json(vendors);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Forgot Password
+const forgotPassword = async (req, res) => {
+  try {
+    const normalizedEmail = normalizeEmail(req.body.email);
+    const user = await User.findOne({ email: normalizedEmail });
+    const successMessage = "If an account with that email exists, a 6-digit verification code has been sent.";
+
+    if (!user) {
+      return res.status(200).json({ message: successMessage });
+    }
+
+    const verificationCode = createVerificationCode();
+    user.passwordResetCodeHash = hashVerificationCode(verificationCode);
+    user.passwordResetCodeExpire = Date.now() + PASSWORD_RESET_EXPIRY_MS;
+
+    await user.save();
+
+    const message = [
+      `Your MultiVendor verification code is ${verificationCode}.`,
+      "",
+      "Enter this 6-digit code on the reset password screen to create a new password.",
+      "This code will expire in 10 minutes.",
+      "",
+      "If you did not request this change, you can safely ignore this email.",
+    ].join("\n");
+
+    try {
+      await sendEmail({
+        email: user.email,
+        subject: "Your MultiVendor password reset code",
+        message,
+      });
+
+      res.status(200).json({ message: successMessage });
+    } catch (error) {
+      console.error("Failed to send password reset email:", error.message);
+      user.passwordResetCodeHash = undefined;
+      user.passwordResetCodeExpire = undefined;
+
+      await user.save();
+
+      return res.status(500).json({
+        message:
+          process.env.NODE_ENV === "production"
+            ? "Email could not be sent"
+            : `Email could not be sent: ${error.message}`,
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Reset Password
+const resetPassword = async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body.email);
+    const code = normalizeText(req.body.code);
+    const password = String(req.body.password || "");
+    const confirmPassword = String(req.body.confirmPassword || "");
+    const passwordError = getPasswordValidationError(password);
+
+    if (passwordError) {
+      return res.status(400).json({ message: passwordError });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({ message: "Passwords do not match" });
+    }
+
+    const user = await User.findOne({
+      email,
+      passwordResetCodeHash: hashVerificationCode(code),
+      passwordResetCodeExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired verification code" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+    user.passwordResetCodeHash = undefined;
+    user.passwordResetCodeExpire = undefined;
+
+    await user.save();
+
+    res.status(200).json({ message: "Password reset successful. Please sign in with your new password." });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -288,6 +454,39 @@ const updateVendorStatus = async (req, res) => {
   }
 };
 
+const updateUserBanStatus = async (req, res) => {
+  try {
+    const { isBanned } = req.body;
+
+    if (typeof isBanned !== "boolean") {
+      return res.status(400).json({ message: "isBanned must be a boolean value" });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (String(user._id) === String(req.user._id)) {
+      return res.status(400).json({ message: "You cannot ban your own account" });
+    }
+
+    if (user.role === "admin") {
+      return res.status(403).json({ message: "Admin accounts cannot be banned" });
+    }
+
+    user.isBanned = isBanned;
+    await user.save();
+
+    res.json({
+      message: isBanned ? "User banned successfully" : "User unbanned successfully",
+      user: toPublicUser(user),
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -295,5 +494,8 @@ module.exports = {
   updateMyProfile,
   getAllUsers,
   getVendors,
-  updateVendorStatus
+  updateVendorStatus,
+  updateUserBanStatus,
+  forgotPassword,
+  resetPassword
 };

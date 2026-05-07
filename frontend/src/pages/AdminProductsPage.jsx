@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import DashboardSidebar from "../components/DashboardSidebar";
 import { useToast } from "../context/useToast";
 import { getImageUrl, productApi } from "../services/api";
+import { getPrimaryProductImage } from "../services/productImages";
 
 export default function AdminProductsPage() {
   const { showToast } = useToast();
@@ -67,34 +68,38 @@ export default function AdminProductsPage() {
           <p className="text-sm font-semibold text-slate-600">Loading products...</p>
         ) : (
           <div className="space-y-3">
-            {products.map((product) => (
-              <article key={product._id} className="flex items-center justify-between rounded-[1.7rem] border border-slate-200 bg-white p-4 shadow-[0_18px_48px_-40px_rgba(15,23,42,0.35)]">
-                <div className="flex items-center gap-3">
-                  {product.imageUrl ? (
-                    <img
-                      src={getImageUrl(product.imageUrl)}
-                      alt={product.name}
-                      className="h-14 w-14 rounded-xl object-cover"
-                    />
-                  ) : (
-                    <div className="h-14 w-14 rounded-xl bg-slate-200" />
-                  )}
-                  <div>
-                    <p className="font-semibold text-slate-900">{product.name}</p>
-                    <p className="text-sm text-slate-600">
-                      {product.categoryId?.name} | Vendor: {product.vendorId?.name}
-                    </p>
+            {products.map((product) => {
+              const primaryImage = getPrimaryProductImage(product);
+
+              return (
+                <article key={product._id} className="flex items-center justify-between rounded-[1.7rem] border border-slate-200 bg-white p-4 shadow-[0_18px_48px_-40px_rgba(15,23,42,0.35)]">
+                  <div className="flex items-center gap-3">
+                    {primaryImage ? (
+                      <img
+                        src={getImageUrl(primaryImage)}
+                        alt={product.name}
+                        className="h-14 w-14 rounded-xl object-cover"
+                      />
+                    ) : (
+                      <div className="h-14 w-14 rounded-xl bg-slate-200" />
+                    )}
+                    <div>
+                      <p className="font-semibold text-slate-900">{product.name}</p>
+                      <p className="text-sm text-slate-600">
+                        {product.categoryId?.name} | Vendor: {product.vendorId?.name}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeProduct(product._id)}
-                  className="rounded-full bg-rose-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-rose-700"
-                >
-                  Delete
-                </button>
-              </article>
-            ))}
+                  <button
+                    type="button"
+                    onClick={() => removeProduct(product._id)}
+                    className="rounded-full bg-rose-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-rose-700"
+                  >
+                    Delete
+                  </button>
+                </article>
+              );
+            })}
             {!products.length && <p className="text-sm font-medium text-slate-600">No products found.</p>}
           </div>
         )}

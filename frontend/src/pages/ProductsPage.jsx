@@ -6,6 +6,7 @@ import Input from "../components/ui/Input";
 import Select from "../components/ui/Select";
 import { useAuth } from "../context/useAuth";
 import { useToast } from "../context/useToast";
+import { getPrimaryProductImage } from "../services/productImages";
 import {
   categoryApi,
   cartApi,
@@ -656,6 +657,7 @@ export default function ProductsPage() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-12">
             {products.map((product, index) => {
               const isSaved = wishlistIds.includes(product._id);
+              const primaryImage = getPrimaryProductImage(product);
 
               return (
                 <article
@@ -665,16 +667,15 @@ export default function ProductsPage() {
                   }`}
                 >
                   <div className={`relative ${index === 0 ? "h-80" : "h-64"}`}>
-                    {product.imageUrl ? (
+                    {primaryImage ? (
                       <img
-                        src={getImageUrl(product.imageUrl)}
+                        src={getImageUrl(primaryImage)}
                         alt={product.name}
                         className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                       />
                     ) : (
                       <div className="h-full w-full bg-[linear-gradient(135deg,_#e2e8f0,_#f8fafc_45%,_#cbd5e1)]" />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
                     <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
                       <p className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-950">
                         {product.categoryId?.name || "Uncategorized"}
@@ -683,20 +684,20 @@ export default function ProductsPage() {
                         {formatPrice(product.price)}
                       </p>
                     </div>
-                    <div className="absolute bottom-0 left-0 right-0 p-5">
-                      <p className="truncate text-xs font-semibold uppercase tracking-[0.18em] text-white/65">
+                  </div>
+
+                  <div className="space-y-4 p-5">
+                    <div>
+                      <p className="truncate text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                         {product.vendorId?.name || "Unknown vendor"}
                       </p>
                       <Link
                         to={`/products/${product._id}`}
-                        className="mt-2 block text-xl font-black tracking-tight !text-gray-100"
+                        className="mt-2 block min-h-[3.5rem] line-clamp-2 text-xl font-black leading-tight tracking-tight text-slate-950 transition hover:text-amber-700"
                       >
                         {product.name}
                       </Link>
                     </div>
-                  </div>
-
-                  <div className="space-y-4 p-5">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex flex-wrap gap-2">
                         <p className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
@@ -714,7 +715,7 @@ export default function ProductsPage() {
                       </Link>
                     </div>
 
-                    <p className="line-clamp-3 text-sm leading-6 text-slate-600">
+                    <p className="line-clamp-2 text-sm leading-6 text-slate-600">
                       {product.description || "No description provided."}
                     </p>
 

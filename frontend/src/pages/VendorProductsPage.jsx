@@ -3,6 +3,8 @@ import DashboardSidebar from "../components/DashboardSidebar";
 import { useToast } from "../context/useToast";
 import { categoryApi, getImageUrl, productApi } from "../services/api";
 
+const MAX_PRODUCT_IMAGES = 6;
+
 const initialForm = {
   name: "",
   price: "",
@@ -20,7 +22,10 @@ export default function VendorProductsPage() {
   const [newImageFiles, setNewImageFiles] = useState([]);
   const [existingImageUrls, setExistingImageUrls] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [savingProduct, setSavingProduct] = useState(false);
   const [error, setError] = useState("");
+  const [productPendingDelete, setProductPendingDelete] = useState(null);
+  const [deletingProductId, setDeletingProductId] = useState("");
 
   const loadMyProducts = async () => {
     setLoading(true);
@@ -63,12 +68,12 @@ export default function VendorProductsPage() {
   const onFileChange = (event) => {
     const files = Array.from(event.target.files || []);
     const totalCurrentImages = newImageFiles.length + existingImageUrls.length;
-    
-    if (totalCurrentImages + files.length > 4) {
-      showToast("Maximum 4 images allowed", "error");
+
+    if (totalCurrentImages + files.length > MAX_PRODUCT_IMAGES) {
+      showToast(`Maximum ${MAX_PRODUCT_IMAGES} images allowed`, "error");
       return;
     }
-    
+
     setNewImageFiles((prev) => [...prev, ...files]);
     // Clear input so same file can be selected again if removed
     event.target.value = "";
@@ -84,7 +89,10 @@ export default function VendorProductsPage() {
 
   const submitCreate = async (event) => {
     event.preventDefault();
+    if (savingProduct) return;
+
     setError("");
+    setSavingProduct(true);
 
     try {
       const payload = {
@@ -99,6 +107,9 @@ export default function VendorProductsPage() {
       if (editingId) {
         // When editing, we also need to tell the backend which existing images to keep
         payload.keepImages = existingImageUrls;
+        if (!existingImageUrls.length) {
+          payload.removeImage = true;
+        }
         await productApi.updateWithImage(editingId, payload);
         showToast("Product updated", "success");
       } else {
@@ -110,6 +121,8 @@ export default function VendorProductsPage() {
       await loadMyProducts();
     } catch (err) {
       setError(err.message || "Failed to save product");
+    } finally {
+      setSavingProduct(false);
     }
   };
 
@@ -128,12 +141,16 @@ export default function VendorProductsPage() {
 
   const deleteProduct = async (productId) => {
     setError("");
+    setDeletingProductId(productId);
     try {
       await productApi.remove(productId);
       showToast("Product deleted", "success");
+      setProductPendingDelete(null);
       await loadMyProducts();
     } catch (err) {
       setError(err.message || "Failed to delete product");
+    } finally {
+      setDeletingProductId("");
     }
   };
 
@@ -155,6 +172,7 @@ export default function VendorProductsPage() {
             placeholder="Product name"
             value={form.name}
             onChange={onChange}
+            disabled={savingProduct}
             required
             className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-amber-300 focus:bg-amber-50/30 focus:outline-none"
           />
@@ -166,6 +184,7 @@ export default function VendorProductsPage() {
             placeholder="Price"
             value={form.price}
             onChange={onChange}
+            disabled={savingProduct}
             required
             className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-amber-300 focus:bg-amber-50/30 focus:outline-none"
           />
@@ -176,6 +195,7 @@ export default function VendorProductsPage() {
             placeholder="Stock"
             value={form.stock}
             onChange={onChange}
+            disabled={savingProduct}
             required
             className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-amber-300 focus:bg-amber-50/30 focus:outline-none"
           />
@@ -183,6 +203,7 @@ export default function VendorProductsPage() {
             name="categoryId"
             value={form.categoryId}
             onChange={onChange}
+            disabled={savingProduct}
             required
             className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-amber-300 focus:bg-amber-50/30 focus:outline-none"
           >
@@ -198,13 +219,14 @@ export default function VendorProductsPage() {
             placeholder="Description"
             value={form.description}
             onChange={onChange}
+            disabled={savingProduct}
             className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-amber-300 focus:bg-amber-50/30 focus:outline-none md:col-span-2"
             rows={3}
           />
           <div className="space-y-3 md:col-span-2">
-            <label className="block text-sm font-semibold text-slate-700">Product images (Max 4)</label>
-            
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <label className="block text-sm font-semibold text-slate-700">{`Product images (Max ${MAX_PRODUCT_IMAGES})`}</label>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
               {/* Existing Images */}
               {existingImageUrls.map((url, idx) => (
                 <div key={`existing-${idx}`} className="group relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
@@ -212,6 +234,7 @@ export default function VendorProductsPage() {
                   <button
                     type="button"
                     onClick={() => removeExistingImage(url)}
+                    disabled={savingProduct}
                     className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-rose-600 text-white opacity-0 transition group-hover:opacity-100"
                   >
                     ×
@@ -227,6 +250,7 @@ export default function VendorProductsPage() {
                   <button
                     type="button"
                     onClick={() => removeNewImage(idx)}
+                    disabled={savingProduct}
                     className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-rose-600 text-white opacity-0 transition group-hover:opacity-100"
                   >
                     ×
@@ -236,7 +260,7 @@ export default function VendorProductsPage() {
               ))}
 
               {/* Upload Button */}
-              {(existingImageUrls.length + newImageFiles.length) < 4 && (
+              {(existingImageUrls.length + newImageFiles.length) < MAX_PRODUCT_IMAGES && (
                 <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 transition hover:border-amber-400 hover:bg-amber-50">
                   <span className="text-2xl text-slate-400">+</span>
                   <span className="text-[10px] font-semibold text-slate-500">Add Photo</span>
@@ -245,6 +269,7 @@ export default function VendorProductsPage() {
                     accept="image/*"
                     multiple
                     onChange={onFileChange}
+                    disabled={savingProduct}
                     className="hidden"
                   />
                 </label>
@@ -252,13 +277,18 @@ export default function VendorProductsPage() {
             </div>
           </div>
           <div className="flex gap-2 md:col-span-2">
-            <button type="submit" className="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">
-              {editingId ? "Update Product" : "Create Product"}
+            <button
+              type="submit"
+              disabled={savingProduct}
+              className="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {savingProduct ? (editingId ? "Updating..." : "Creating...") : editingId ? "Update Product" : "Create Product"}
             </button>
             {editingId && (
               <button
                 type="button"
                 onClick={resetForm}
+                disabled={savingProduct}
                 className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-amber-50"
               >
                 Cancel Edit
@@ -293,13 +323,15 @@ export default function VendorProductsPage() {
                 <button
                   type="button"
                   onClick={() => startEdit(product)}
+                  disabled={savingProduct}
                   className="rounded-full border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-amber-50"
                 >
                   Edit
                 </button>
                 <button
                   type="button"
-                  onClick={() => deleteProduct(product._id)}
+                  onClick={() => setProductPendingDelete(product)}
+                  disabled={savingProduct}
                   className="rounded-full bg-rose-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-rose-700"
                 >
                   Delete
@@ -309,6 +341,35 @@ export default function VendorProductsPage() {
           ))}
         </div>
       </div>
+
+      {productPendingDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4">
+          <div className="w-full max-w-md rounded-[1.8rem] border border-slate-200 bg-white p-6 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.55)]">
+            <h2 className="text-xl font-black tracking-[-0.03em] text-slate-950">Delete Product</h2>
+            <p className="mt-3 text-sm font-medium leading-6 text-slate-600">
+              Are you sure do you want to delete? This action cannot be undone.
+            </p>
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setProductPendingDelete(null)}
+                disabled={deletingProductId === productPendingDelete._id}
+                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                No
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteProduct(productPendingDelete._id)}
+                disabled={deletingProductId === productPendingDelete._id}
+                className="rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {deletingProductId === productPendingDelete._id ? "Deleting..." : "Yes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

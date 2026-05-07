@@ -9,6 +9,11 @@ require("dotenv").config();
 const { errorHandler, notFoundHandler } = require("./middleware/errorHandler");
 
 const app = express();
+const configuredOrigins = (process.env.FRONTEND_ORIGIN || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const localOriginPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
 
 // Middleware
 app.use(
@@ -18,21 +23,31 @@ app.use(
 );
 app.use(
   cors({
-    origin: process.env.FRONTEND_ORIGIN ? process.env.FRONTEND_ORIGIN.split(",") : "*",
+    origin(origin, callback) {
+      if (
+        !origin ||
+        localOriginPattern.test(origin) ||
+        configuredOrigins.includes(origin)
+      ) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error(`Origin ${origin} is not allowed by CORS`));
+    },
   }),
 );
 app.use(express.json({ limit: "1mb" }));
 app.use((req, res, next) => {
-  req.requestId = req.headers["x-request-id"] || `${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+  req.requestId =
+    req.headers["x-request-id"] ||
+    `${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
   res.setHeader("x-request-id", req.requestId);
   next();
 });
 app.use(morgan("dev"));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.use(
-  "/api/users/login",
-  rateLimit({ windowMs: 15 * 60 * 1000, limit: 20 }),
-);
+app.use("/api/users/login", rateLimit({ windowMs: 15 * 60 * 1000, limit: 20 }));
 
 // Test route
 app.get("/", (req, res) => {

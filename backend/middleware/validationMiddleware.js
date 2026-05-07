@@ -1,5 +1,10 @@
 const mongoose = require("mongoose");
 const { AppError } = require("./errorHandler");
+const {
+  isValidEmail,
+  getPasswordValidationError,
+  isValidVerificationCode,
+} = require("../utils/authValidation");
 
 const validateObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
 
@@ -11,15 +16,19 @@ const requireObjectIdParam = (paramName) => (req, _res, next) => {
 };
 
 const validateRegister = (req, _res, next) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, confirmPassword } = req.body;
   if (!name || String(name).trim().length < 2) {
     return next(new AppError("Name is required", 400, "VALIDATION_ERROR"));
   }
-  if (!email || !String(email).includes("@")) {
+  if (!email || !isValidEmail(email)) {
     return next(new AppError("Valid email is required", 400, "VALIDATION_ERROR"));
   }
-  if (!password || String(password).length < 6) {
-    return next(new AppError("Password must be at least 6 characters", 400, "VALIDATION_ERROR"));
+  const passwordError = getPasswordValidationError(password);
+  if (passwordError) {
+    return next(new AppError(passwordError, 400, "VALIDATION_ERROR"));
+  }
+  if (confirmPassword !== undefined && String(confirmPassword) !== String(password)) {
+    return next(new AppError("Passwords do not match", 400, "VALIDATION_ERROR"));
   }
   return next();
 };
@@ -29,6 +38,42 @@ const validateLogin = (req, _res, next) => {
   if (!email || !password) {
     return next(new AppError("Email and password are required", 400, "VALIDATION_ERROR"));
   }
+  if (!isValidEmail(email)) {
+    return next(new AppError("Valid email is required", 400, "VALIDATION_ERROR"));
+  }
+  return next();
+};
+
+const validateForgotPassword = (req, _res, next) => {
+  const { email } = req.body;
+
+  if (!email || !isValidEmail(email)) {
+    return next(new AppError("Valid email is required", 400, "VALIDATION_ERROR"));
+  }
+
+  return next();
+};
+
+const validateResetPassword = (req, _res, next) => {
+  const { email, code, password, confirmPassword } = req.body;
+
+  if (!email || !isValidEmail(email)) {
+    return next(new AppError("Valid email is required", 400, "VALIDATION_ERROR"));
+  }
+
+  if (!code || !isValidVerificationCode(code)) {
+    return next(new AppError("Verification code must be 6 digits", 400, "VALIDATION_ERROR"));
+  }
+
+  const passwordError = getPasswordValidationError(password);
+  if (passwordError) {
+    return next(new AppError(passwordError, 400, "VALIDATION_ERROR"));
+  }
+
+  if (String(confirmPassword || "") !== String(password || "")) {
+    return next(new AppError("Passwords do not match", 400, "VALIDATION_ERROR"));
+  }
+
   return next();
 };
 
@@ -64,6 +109,8 @@ module.exports = {
   requireObjectIdParam,
   validateRegister,
   validateLogin,
+  validateForgotPassword,
+  validateResetPassword,
   validateCreateProduct,
   validateCartPayload,
 };

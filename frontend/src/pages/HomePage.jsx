@@ -3,7 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { PRODUCT_MENU_GROUPS } from "../data/productMegaMenu";
 import { getImageUrl, productApi } from "../services/api";
-import { getRecentlyViewedProducts } from "../services/recentlyViewed";
+import { getPrimaryProductImage } from "../services/productImages";
+import {
+  getRecentlyViewedProducts,
+  syncRecentlyViewedProducts,
+} from "../services/recentlyViewed";
 
 const CATEGORY_SURFACES = [
   "bg-amber-100 text-amber-950 ring-amber-200",
@@ -15,6 +19,19 @@ const CATEGORY_SURFACES = [
   "bg-cyan-100 text-cyan-950 ring-cyan-200",
   "bg-lime-100 text-lime-950 ring-lime-200",
 ];
+
+const getDescriptionPreview = (value, maxLength = 110) => {
+  if (!value || !value.trim()) {
+    return "No description available.";
+  }
+
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, maxLength).trimEnd()}...`;
+};
 
 export default function HomePage() {
   const { isAuthenticated, user } = useAuth();
@@ -51,14 +68,36 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    let active = true;
+
     const syncRecentlyViewed = () => {
-      setRecentlyViewed(getRecentlyViewedProducts());
+      const loadRecentlyViewed = async () => {
+        setRecentlyViewed(getRecentlyViewedProducts());
+
+        try {
+          const syncedItems = await syncRecentlyViewedProducts((productId) =>
+            productApi.getById(productId),
+          );
+
+          if (active) {
+            setRecentlyViewed(syncedItems);
+          }
+        } catch {
+          if (active) {
+            setRecentlyViewed(getRecentlyViewedProducts());
+          }
+        }
+      };
+
+      void loadRecentlyViewed();
     };
 
+    syncRecentlyViewed();
     window.addEventListener("focus", syncRecentlyViewed);
     window.addEventListener("storage", syncRecentlyViewed);
 
     return () => {
+      active = false;
       window.removeEventListener("focus", syncRecentlyViewed);
       window.removeEventListener("storage", syncRecentlyViewed);
     };
@@ -301,60 +340,159 @@ export default function HomePage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-12">
-          {featuredProducts.map((item, index) => (
-            <article
-              key={item._id}
-              className={`group overflow-hidden rounded-[1.8rem] border border-slate-200 bg-white shadow-[0_20px_60px_-42px_rgba(15,23,42,0.35)] transition hover:-translate-y-1 hover:shadow-[0_28px_70px_-36px_rgba(15,23,42,0.4)] ${
-                index === 0 ? "xl:col-span-6 xl:row-span-2" : "xl:col-span-3"
-              }`}
-            >
-              <div className={`relative ${index === 0 ? "h-80" : "h-60"}`}>
-                {item.imageUrl ? (
-                  <img
-                    src={getImageUrl(item.imageUrl)}
-                    alt={item.name}
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                  />
-                ) : (
-                  <div className="h-full w-full bg-[linear-gradient(135deg,_#e2e8f0,_#f8fafc_42%,_#cbd5e1)]" />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/15 to-transparent" />
-                <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
-                  <span className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-950">
-                    {item.categoryId?.name || "Uncategorized"}
-                  </span>
-                  <span className="rounded-full bg-amber-300 px-3 py-1 text-sm font-black text-slate-950">
-                    ${item.price}
-                  </span>
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
-                    {item.vendorId?.name || "Vendor"}
-                  </p>
-                  <h3 className="mt-2 text-xl font-black tracking-tight !text-gray-100">
-                    {item.name}
-                  </h3>
-                </div>
-              </div>
+          {featuredProducts.map((item, index) => {
+            const primaryImage = getPrimaryProductImage(item);
 
-              <div className="space-y-4 p-5">
-                <p className="text-sm leading-6 text-slate-600">
-                  {item.description || "No description available."}
-                </p>
-                <div className="flex items-center justify-between gap-4 border-t border-slate-100 pt-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    Stock {item.stock}
-                  </p>
-                  <Link
-                    to={`/products/${item._id}`}
-                    className="text-sm font-semibold text-slate-950 transition hover:text-amber-700"
-                  >
-                    View details
-                  </Link>
+            if (index === 0) {
+              return (
+                <article
+                  key={item._id}
+                  className="group relative overflow-hidden rounded-[2.2rem] border border-slate-200 bg-[linear-gradient(145deg,_#fff8ec_0%,_#ffffff_42%,_#eef6ff_100%)] shadow-[0_30px_90px_-48px_rgba(15,23,42,0.38)] transition hover:-translate-y-1 hover:shadow-[0_38px_100px_-44px_rgba(15,23,42,0.42)] xl:col-span-6 xl:row-span-2"
+                >
+                  <div className="pointer-events-none absolute inset-0">
+                    <div className="absolute left-[-12%] top-[-10%] h-56 w-56 rounded-full bg-amber-300/20 blur-3xl" />
+                    <div className="absolute right-[-10%] top-[16%] h-60 w-60 rounded-full bg-sky-300/18 blur-3xl" />
+                    <div className="absolute bottom-[-18%] left-[18%] h-64 w-64 rounded-full bg-emerald-300/12 blur-3xl" />
+                  </div>
+
+                  <div className="relative grid h-full xl:grid-rows-[1.08fr_0.92fr]">
+                    <div className="relative overflow-hidden border-b border-slate-200/70 bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.18),_transparent_32%),radial-gradient(circle_at_82%_22%,_rgba(56,189,248,0.18),_transparent_28%),linear-gradient(180deg,_rgba(255,255,255,0.98)_0%,_rgba(255,249,237,0.96)_100%)]">
+                      <div className="absolute left-5 right-5 top-5 flex flex-wrap items-start justify-between gap-3">
+                        <div className="flex flex-wrap gap-2">
+                          <span className="rounded-full bg-slate-950 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-white">
+                            Spotlight pick
+                          </span>
+                          <span className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-950 shadow-sm">
+                            {item.categoryId?.name || "Uncategorized"}
+                          </span>
+                        </div>
+                        <span className="rounded-full bg-amber-300 px-4 py-2 text-base font-black text-slate-950 shadow-sm">
+                          ${item.price}
+                        </span>
+                      </div>
+
+                      <div className="relative flex items-center justify-center px-6 pb-6 pt-18 sm:px-10 sm:pb-8">
+                        {primaryImage ? (
+                          <div className="">
+                            <img
+                              src={getImageUrl(primaryImage)}
+                              alt={item.name}
+                              className="relative z-10 max-h-[24rem] rounded-4xl w-full object-contain drop-shadow-[0_28px_48px_rgba(15,23,42,0.18)] transition duration-500"
+                            />
+                          </div>
+                        ) : (
+                          <div className="h-full min-h-[24rem] w-full rounded-[2rem] bg-[linear-gradient(135deg,_#e2e8f0,_#f8fafc_42%,_#cbd5e1)]" />
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-6 p-6 sm:p-7 xl:grid-cols-[1.2fr_0.8fr] xl:items-start">
+                      <div className="space-y-4">
+                        <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">
+                          {item.vendorId?.name || "Vendor"}
+                        </p>
+                        <h3 className="max-w-3xl text-3xl font-black leading-[1.02] tracking-[-0.04em] text-slate-950 sm:text-[2.45rem]">
+                          {item.name}
+                        </h3>
+                        <p className="max-w-2xl text-sm leading-7 text-slate-600 sm:text-[15px]">
+                          {getDescriptionPreview(item.description, 180)}
+                        </p>
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700">
+                            Rating {Number(item.averageRating || 0).toFixed(1)}
+                          </span>
+                          <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-900">
+                            {item.stock > 0 ? `${item.stock} in stock` : "Out of stock"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+                        <div className="rounded-[1.5rem] border border-slate-200 bg-white/85 p-4 shadow-sm backdrop-blur">
+                          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                            Price
+                          </p>
+                          <p className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+                            ${item.price}
+                          </p>
+                        </div>
+                        <div className="rounded-[1.5rem] border border-slate-200 bg-white/85 p-4 shadow-sm backdrop-blur">
+
+                          <p className="mt-2 text-base font-bold text-slate-950 text-center">
+                            {item.stock > 0 ? "Ready to order" : "Currently unavailable"}
+                          </p>
+                        </div>
+                        <Link
+                          to={`/products/${item._id}`}
+                          className="flex  flex-col justify-between rounded-[1.6rem] p-4 text-white transition "
+                        >
+                          <p className="text-md text-center font-black tracking-tight underline">
+                            View details
+                          </p>
+
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              );
+            }
+
+            return (
+              <article
+                key={item._id}
+                className={`group overflow-hidden rounded-[1.8rem] border border-slate-200 bg-white shadow-[0_20px_60px_-42px_rgba(15,23,42,0.35)] transition hover:-translate-y-1 hover:shadow-[0_28px_70px_-36px_rgba(15,23,42,0.4)] ${"xl:col-span-3"
+                  }`}
+              >
+                <div
+                  className="relative h-60 overflow-hidden"
+                >
+                  {primaryImage ? (
+                    <img
+                      src={getImageUrl(primaryImage)}
+                      alt={item.name}
+                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="h-full w-full bg-[linear-gradient(135deg,_#e2e8f0,_#f8fafc_42%,_#cbd5e1)]" />
+                  )}
+                  <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
+                    <span className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-950">
+                      {item.categoryId?.name || "Uncategorized"}
+                    </span>
+                    <span className="rounded-full bg-amber-300 px-3 py-1 text-sm font-black text-slate-950">
+                      ${item.price}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
+
+                <div className="space-y-4 p-5">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                      {item.vendorId?.name || "Vendor"}
+                    </p>
+                    <h3 className="mt-2 min-h-[3.5rem] line-clamp-2 text-xl font-black leading-tight tracking-tight text-slate-950">
+                      {item.name}
+                    </h3>
+                  </div>
+                  <p className="line-clamp-2 text-sm leading-6 text-slate-600">
+                    {getDescriptionPreview(item.description)}
+                  </p>
+                  <div className="flex items-center justify-between gap-4 border-t border-slate-100 pt-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      Stock {item.stock}
+                    </p>
+                    <Link
+                      to={`/products/${item._id}`}
+                      className="text-sm font-semibold text-slate-950 transition hover:text-amber-700"
+                    >
+                      View details
+                    </Link>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
 
         {isLoadingProducts && (
@@ -395,55 +533,59 @@ export default function HomePage() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {recentlyViewed.slice(0, 4).map((item, index) => (
-              <article
-                key={item._id}
-                className={`group overflow-hidden rounded-[1.8rem] border border-slate-200 bg-white shadow-[0_20px_60px_-42px_rgba(15,23,42,0.35)] transition hover:-translate-y-1 hover:shadow-[0_28px_70px_-36px_rgba(15,23,42,0.4)] ${
-                  index === 0 ? "xl:col-span-2" : ""
-                }`}
-              >
-                <div className={`relative ${index === 0 ? "h-72" : "h-60"}`}>
-                  {item.imageUrl ? (
-                    <img
-                      src={getImageUrl(item.imageUrl)}
-                      alt={item.name}
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="h-full w-full bg-[linear-gradient(135deg,_#e2e8f0,_#f8fafc_42%,_#cbd5e1)]" />
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
-                  <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
-                    <span className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-950">
-                      {item.categoryName || "Uncategorized"}
-                    </span>
-                    <span className="rounded-full bg-amber-300 px-3 py-1 text-sm font-black text-slate-950">
-                      ${item.price}
-                    </span>
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-5">
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
-                      {item.vendorName || "Vendor"}
-                    </p>
-                    <h3 className="mt-2 text-2xl font-black tracking-tight !text-gray-100">
-                      {item.name}
-                    </h3>
-                  </div>
-                </div>
+            {recentlyViewed.slice(0, 4).map((item, index) => {
+              const primaryImage = getPrimaryProductImage(item);
 
-                <div className="flex items-center justify-between gap-4 p-5">
-                  <p className="text-sm font-semibold text-slate-600">
-                    Rating {Number(item.averageRating || 0).toFixed(1)}
-                  </p>
-                  <Link
-                    to={`/products/${item._id}`}
-                    className="text-sm font-semibold text-slate-950 transition hover:text-amber-700"
-                  >
-                    Revisit product
-                  </Link>
-                </div>
-              </article>
-            ))}
+              return (
+                <article
+                  key={item._id}
+                  className={`group overflow-hidden rounded-[1.8rem] border border-slate-200 bg-white shadow-[0_20px_60px_-42px_rgba(15,23,42,0.35)] transition hover:-translate-y-1 hover:shadow-[0_28px_70px_-36px_rgba(15,23,42,0.4)] ${index === 0 ? "xl:col-span-2" : ""
+                    }`}
+                >
+                  <div className={`relative ${index === 0 ? "h-72" : "h-60"}`}>
+                    {primaryImage ? (
+                      <img
+                        src={getImageUrl(primaryImage)}
+                        alt={item.name}
+                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="h-full w-full bg-[linear-gradient(135deg,_#e2e8f0,_#f8fafc_42%,_#cbd5e1)]" />
+                    )}
+                    <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
+                      <span className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-950">
+                        {item.categoryName || "Uncategorized"}
+                      </span>
+                      <span className="rounded-full bg-amber-300 px-3 py-1 text-sm font-black text-slate-950">
+                        ${item.price}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 p-5">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                        {item.vendorName || "Vendor"}
+                      </p>
+                      <h3 className="mt-2 min-h-[4rem] line-clamp-2 text-2xl font-black leading-tight tracking-tight text-slate-950">
+                        {item.name}
+                      </h3>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="text-sm font-semibold text-slate-600">
+                        Rating {Number(item.averageRating || 0).toFixed(1)}
+                      </p>
+                      <Link
+                        to={`/products/${item._id}`}
+                        className="text-sm font-semibold text-slate-950 transition hover:text-amber-700"
+                      >
+                        Revisit product
+                      </Link>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </section>
       )}
@@ -475,9 +617,8 @@ export default function HomePage() {
             <Link
               key={category}
               to={`/products?q=${encodeURIComponent(category)}`}
-              className={`rounded-[1.4rem] px-4 py-4 ring-1 transition hover:-translate-y-0.5 ${
-                CATEGORY_SURFACES[index % CATEGORY_SURFACES.length]
-              }`}
+              className={`rounded-[1.4rem] px-4 py-4 ring-1 transition hover:-translate-y-0.5 ${CATEGORY_SURFACES[index % CATEGORY_SURFACES.length]
+                }`}
             >
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] opacity-70">
                 Explore

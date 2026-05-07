@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { useToast } from "../context/useToast";
 import { cartApi, getImageUrl, productApi, wishlistApi } from "../services/api";
+import { getPrimaryProductImage } from "../services/productImages";
 import {
   getRecentlyViewedProducts,
   saveRecentlyViewedProduct,
@@ -46,6 +47,17 @@ const formatReviewDate = (value) => {
   }
 
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(date);
+};
+
+const getDescriptionSentences = (value) => {
+  if (!value || !value.trim()) {
+    return [];
+  }
+
+  const normalized = value.replace(/\s+/g, " ").trim();
+  return (normalized.match(/[^.!?]+[.!?]?/g) || [])
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
 };
 
 const getCategoryName = (item) => item.categoryId?.name || item.categoryName || "Uncategorized";
@@ -143,12 +155,14 @@ function ReviewComposer({ currentUserReview, onSubmit, submitting }) {
 }
 
 function DiscoveryProductCard({ item, caption }) {
+  const primaryImage = getPrimaryProductImage(item);
+
   return (
     <article className="overflow-hidden rounded-[1.7rem] border border-slate-200 bg-white shadow-[0_18px_55px_-44px_rgba(15,23,42,0.35)]">
       <div className="relative h-52">
-        {item.imageUrl ? (
+        {primaryImage ? (
           <img
-            src={getImageUrl(item.imageUrl)}
+            src={getImageUrl(primaryImage)}
             alt={item.name}
             className="h-full w-full object-cover"
           />
@@ -173,7 +187,7 @@ function DiscoveryProductCard({ item, caption }) {
           </p>
           <Link
             to={`/products/${item._id}`}
-            className="mt-2 block text-xl font-black tracking-tight text-slate-950 transition hover:text-amber-700"
+            className="mt-2 block min-h-[3.5rem] line-clamp-2 text-xl font-black leading-tight tracking-tight text-slate-950 transition hover:text-amber-700"
           >
             {item.name}
           </Link>
@@ -238,7 +252,11 @@ export default function ProductDetailsPage() {
         if (active) {
           const nextRecentlyViewed = saveRecentlyViewedProduct(data);
           setProduct(data);
-          setActiveImage(data.imageUrl || "");
+          setActiveImage(
+            Array.isArray(data.imageUrls) && data.imageUrls.length
+              ? data.imageUrls[0]
+              : data.imageUrl || "",
+          );
           setRelatedProducts(
             (Array.isArray(relatedResponse.items) ? relatedResponse.items : [])
               .filter((item) => item._id !== data._id)
@@ -273,10 +291,22 @@ export default function ProductDetailsPage() {
   const currentUserReview = allReviews.find(
     (review) => toEntityId(review.userId) === user?._id,
   );
+  const productImages = Array.from(
+    new Set(
+      [
+        ...(Array.isArray(product?.imageUrls) ? product.imageUrls : []),
+        product?.imageUrl,
+      ].filter(Boolean),
+    ),
+  );
+  const displayedImage = productImages.includes(activeImage)
+    ? activeImage
+    : productImages[0] || "";
   const averageRating = Number(product?.averageRating || 0).toFixed(1);
   const reviewCount = allReviews.length;
   const canManageReviews =
     user?.role === "vendor" && toEntityId(product?.vendorId) === user._id;
+  const descriptionItems = getDescriptionSentences(product?.description);
 
   const filteredReviews = allReviews.filter((review) => {
     if (reviewRatingFilter === "all") {
@@ -421,7 +451,7 @@ export default function ProductDetailsPage() {
 
   return (
     <section className="space-y-6 md:space-y-8">
-      <header className="relative overflow-hidden rounded-[2rem] border border-slate-800 bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.18),_transparent_28%),radial-gradient(circle_at_82%_20%,_rgba(56,189,248,0.16),_transparent_24%),linear-gradient(135deg,_#020617_0%,_#111827_54%,_#1e293b_100%)] px-6 py-7 text-white shadow-[0_30px_90px_-52px_rgba(15,23,42,0.95)] sm:px-8 sm:py-8">
+      <header className="relative overflow-hidden rounded-[2rem] border border-slate-400 bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.18),_transparent_28%),radial-gradient(circle_at_82%_20%,_rgba(56,189,248,0.16),_transparent_24%),linear-gradient(135deg,_#020617_0%,_#111827_54%,_#1e293b_100%)] px-6 py-7 text-white shadow-[0_30px_90px_-52px_rgba(15,23,42,0.95)] sm:px-8 sm:py-8">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -left-12 top-0 h-44 w-44 rounded-full bg-amber-300/10 blur-3xl" />
           <div className="absolute bottom-[-30%] right-[14%] h-48 w-48 rounded-full bg-sky-300/10 blur-3xl" />
@@ -443,7 +473,7 @@ export default function ProductDetailsPage() {
               </Badge>
             </div>
 
-            <h1 className="mt-4 text-4xl font-black tracking-[-0.04em] text-white sm:text-5xl">
+            <h1 className="mt-4 text-4xl font-black tracking-[-0.04em] !text-slate-50 sm:text-5xl">
               {product.name}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
@@ -478,43 +508,54 @@ export default function ProductDetailsPage() {
       <div className="grid gap-6 xl:grid-cols-12">
         <div className="space-y-6 xl:col-span-7">
           <Card className="overflow-hidden rounded-[2rem] border border-slate-200 shadow-[0_28px_80px_-52px_rgba(15,23,42,0.45)]">
-            <div className="relative">
-              {activeImage ? (
-                <img
-                  src={getImageUrl(activeImage)}
-                  alt={product.name}
-                  className="h-[420px] w-full object-cover transition-all duration-500 sm:h-[520px]"
-                />
-              ) : (
-                <div className="h-[420px] w-full bg-[linear-gradient(135deg,_#e2e8f0,_#f8fafc_42%,_#cbd5e1)] sm:h-[520px]" />
-              )}
-
-              {/* Thumbnail Gallery Overlay */}
-              {product.imageUrls && product.imageUrls.length > 1 && (
-                <div className="absolute bottom-6 right-6 flex gap-2">
-                  {product.imageUrls.map((url, idx) => (
+            <div className="grid gap-4 p-4 md:grid-cols-[88px_minmax(0,1fr)] md:p-5">
+              {productImages.length > 0 ? (
+                <div className="order-2 flex gap-3 overflow-x-auto md:order-1 md:flex-col md:overflow-x-visible">
+                  {productImages.map((url, idx) => (
                     <button
-                      key={idx}
+                      key={`${url}-${idx}`}
+                      type="button"
                       onClick={() => setActiveImage(url)}
-                      className={`h-16 w-16 overflow-hidden rounded-xl border-2 transition-all ${
-                        activeImage === url ? "border-amber-400 ring-2 ring-amber-400/50" : "border-white/20 hover:border-white/50"
+                      className={`h-20 w-20 shrink-0 overflow-hidden rounded-2xl border bg-white transition-all ${
+                        displayedImage === url
+                          ? "border-black ring-2 ring-black"
+                          : "border-slate-200 hover:border-slate-300"
                       }`}
+                      aria-label={`Show product photo ${idx + 1}`}
                     >
-                      <img src={getImageUrl(url)} alt="" className="h-full w-full object-cover" />
+                      <img
+                        src={getImageUrl(url)}
+                        alt={`${product.name} thumbnail ${idx + 1}`}
+                        className="h-full w-full object-cover"
+                      />
                     </button>
                   ))}
                 </div>
-              )}
+              ) : null}
 
-              <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-slate-950 via-slate-950/5 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-6 pointer-events-none sm:p-7">
-                <div className="rounded-[1.6rem] border border-white/10 bg-white/10 p-4 text-white backdrop-blur max-w-[280px]">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/60">
-                    Vendor spotlight
-                  </p>
-                  <p className="mt-2 text-xl font-black tracking-tight text-white">
-                    {getVendorName(product)}
-                  </p>
+              <div className="relative order-1 md:order-2">
+                {displayedImage ? (
+                  <div className="mx-auto flex h-[220px] w-full items-center justify-center rounded-[1.8rem] p-6 sm:h-[280px] sm:p-8 lg:h-[340px]">
+                    <img
+                      src={getImageUrl(displayedImage)}
+                      alt={product.name}
+                      className="h-full w-full object-contain transition-all duration-500"
+                    />
+                  </div>
+                ) : (
+                  <div className="mx-auto h-[220px] w-full rounded-[1.8rem] bg-[linear-gradient(135deg,_#e2e8f0,_#f8fafc_42%,_#cbd5e1)] sm:h-[280px] lg:h-[340px]" />
+                )}
+
+                <div className="absolute inset-0 pointer-events-none rounded-[1.8rem] border-2 border-gray-400" />
+                <div className="pointer-events-none absolute left-4 top-4 sm:left-5 sm:top-5">
+                  <div className="w-[132px] rounded-[1.2rem] border border-gray-800 bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.16),_transparent_30%),radial-gradient(circle_at_82%_20%,_rgba(56,189,248,0.14),_transparent_26%),linear-gradient(135deg,_#ffffff_0%,_#f1f5f9_54%,_#dbeafe_100%)] p-3 text-white backdrop-blur sm:w-[152px]">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-gray-900">
+                      Vendor spotlight
+                    </p>
+                    <p className="mt-2 text-sm font-black tracking-tight text-black">
+                      {getVendorName(product)}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -522,7 +563,7 @@ export default function ProductDetailsPage() {
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <article
-              className={`rounded-[1.5rem] px-4 py-4 ring-1 ${DETAIL_SURFACES[0]}`}
+              className={`flex min-h-[104px] flex-col justify-between rounded-[1.5rem] px-5 py-4 ring-1 sm:min-h-[112px] ${DETAIL_SURFACES[0]}`}
             >
               <p className="text-[11px] font-bold uppercase tracking-[0.2em] opacity-70">
                 Category
@@ -533,7 +574,7 @@ export default function ProductDetailsPage() {
             </article>
 
             <article
-              className={`rounded-[1.5rem] px-4 py-4 ring-1 ${DETAIL_SURFACES[1]}`}
+              className={`flex min-h-[104px] flex-col justify-between rounded-[1.5rem] px-5 py-4 ring-1 sm:min-h-[112px] ${DETAIL_SURFACES[1]}`}
             >
               <p className="text-[11px] font-bold uppercase tracking-[0.2em] opacity-70">
                 Inventory
@@ -544,7 +585,7 @@ export default function ProductDetailsPage() {
             </article>
 
             <article
-              className={`rounded-[1.5rem] px-4 py-4 ring-1 ${DETAIL_SURFACES[2]}`}
+              className={`flex min-h-[104px] flex-col justify-between rounded-[1.5rem] px-5 py-4 ring-1 sm:min-h-[112px] ${DETAIL_SURFACES[2]}`}
             >
               <p className="text-[11px] font-bold uppercase tracking-[0.2em] opacity-70">
                 Rating
@@ -562,9 +603,19 @@ export default function ProductDetailsPage() {
                 <h2 className="text-2xl font-black tracking-tight text-slate-950">
                   Details that help buyers commit faster
                 </h2>
-                <p className="text-sm leading-7 text-slate-600">
-                  {product.description || "Details will be updated soon."}
-                </p>
+                {descriptionItems.length > 0 ? (
+                  <ul className="space-y-2 pl-5 text-sm leading-7 text-slate-600 list-disc">
+                    {descriptionItems.map((sentence, index) => (
+                      <li key={`${product._id || "product"}-description-${index}`}>
+                        {sentence}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm leading-7 text-slate-600">
+                    Details will be updated soon.
+                  </p>
+                )}
               </CardBody>
             </Card>
 

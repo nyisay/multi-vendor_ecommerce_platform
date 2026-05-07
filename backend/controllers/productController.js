@@ -1,7 +1,12 @@
 const Product = require("../models/Product");
 const Category = require("../models/Category");
-const fs = require("fs");
-const path = require("path");
+const {
+  buildProductImageObjectPath,
+  deleteObjectsByPublicUrls,
+  uploadImageBuffer,
+} = require("../utils/storageService");
+
+const MAX_PRODUCT_IMAGES = 6;
 
 const PRODUCT_DETAIL_POPULATE = [
   { path: "vendorId", select: "name email" },
@@ -9,24 +14,12 @@ const PRODUCT_DETAIL_POPULATE = [
   { path: "reviews.userId", select: "name profileImageUrl" }
 ];
 
-const getFilePathFromImageUrl = (imageUrl) => {
-  if (!imageUrl || !imageUrl.startsWith("/uploads/")) return null;
-  return path.join(__dirname, "..", imageUrl);
-};
-
-const removeProductImageFile = (imageUrl) => {
-  const filePath = getFilePathFromImageUrl(imageUrl);
-  if (filePath && fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
-  }
-};
-
 const normalizeProductImageUrls = (imageUrls, imageUrl) => {
   const baseImageUrls = Array.isArray(imageUrls) && imageUrls.length
     ? imageUrls
     : [imageUrl];
 
-  return Array.from(new Set(baseImageUrls.filter(Boolean))).slice(0, 4);
+  return Array.from(new Set(baseImageUrls.filter(Boolean))).slice(0, MAX_PRODUCT_IMAGES);
 };
 
 const syncProductImageFields = (product, imageUrls) => {
@@ -39,27 +32,47 @@ const syncProductImageFields = (product, imageUrls) => {
 const getProductImageUrls = (product) =>
   normalizeProductImageUrls(product?.imageUrls, product?.imageUrl);
 
-const removeProductImageFiles = (imageUrls) => {
-  Array.from(new Set((Array.isArray(imageUrls) ? imageUrls : [imageUrls]).filter(Boolean)))
-    .forEach(removeProductImageFile);
-};
-
-const getUploadedProductImageUrls = (req) => {
-  const imageFiles = [];
+const getUploadedProductFiles = (req) => {
+  const productFiles = [];
 
   if (Array.isArray(req.files)) {
-    imageFiles.push(...req.files);
+    productFiles.push(...req.files);
   } else if (req.files && typeof req.files === "object") {
     if (Array.isArray(req.files.images)) {
-      imageFiles.push(...req.files.images);
+      productFiles.push(...req.files.images);
     }
 
     if (Array.isArray(req.files.image)) {
-      imageFiles.push(...req.files.image);
+      productFiles.push(...req.files.image);
     }
   }
 
-  return imageFiles.map((file) => `/uploads/${file.filename}`).slice(0, 4);
+  return productFiles.slice(0, MAX_PRODUCT_IMAGES);
+};
+
+const uploadProductImagesToStorage = async (files, categoryName) => Promise.all(
+  files.map((file) => uploadImageBuffer({
+    buffer: file.buffer,
+    mimeType: file.mimetype,
+    objectPath: buildProductImageObjectPath(categoryName, file.originalname),
+  }))
+);
+
+const keepCurrentProductImages = (currentImageUrls, keepImages) => {
+  const requestedImageUrls = Array.isArray(keepImages) ? keepImages : [keepImages];
+  const keepSet = new Set(requestedImageUrls.filter(Boolean));
+  return currentImageUrls.filter((imageUrl) => keepSet.has(imageUrl));
+};
+
+const getTrimmedNewImageUrls = (imageUrls, newlyUploadedImageUrls) => {
+  const normalizedImageUrls = normalizeProductImageUrls(imageUrls, undefined);
+  const normalizedSet = new Set(normalizedImageUrls);
+
+  return {
+    imageUrls: normalizedImageUrls,
+    keptUploadedImageUrls: newlyUploadedImageUrls.filter((imageUrl) => normalizedSet.has(imageUrl)),
+    trimmedUploadedImageUrls: newlyUploadedImageUrls.filter((imageUrl) => !normalizedSet.has(imageUrl)),
+  };
 };
 
 const withProductImageGallery = (product) => {
@@ -152,7 +165,7 @@ const buildCatalogBaseFilter = ({ category, q, stockStatus, minRating }) => {
 const createProduct = async (req, res) => {
   try {
     const { name, price, description, stock, categoryId } = req.body;
-    const uploadedImageUrls = getUploadedProductImageUrls(req);
+    const uploadedImageFiles = getUploadedProductFiles(req);
 
     const category = await Category.findById(categoryId);
     if (!category) {
@@ -163,18 +176,25 @@ const createProduct = async (req, res) => {
       return res.status(403).json({ message: "Vendor account is not approved" });
     }
 
-    const product = await Product.create({
-      name,
-      price,
-      description,
-      stock,
-      categoryId,
-      imageUrl: uploadedImageUrls[0],
-      imageUrls: uploadedImageUrls,
-      vendorId: req.user._id //from JWT
-    });
+    const uploadedImageUrls = await uploadProductImagesToStorage(uploadedImageFiles, category.name);
 
-    res.status(201).json(withProductImageGallery(product));
+    try {
+      const product = await Product.create({
+        name,
+        price,
+        description,
+        stock,
+        categoryId,
+        imageUrl: uploadedImageUrls[0],
+        imageUrls: uploadedImageUrls,
+        vendorId: req.user._id //from JWT
+      });
+
+      res.status(201).json(withProductImageGallery(product));
+    } catch (error) {
+      await deleteObjectsByPublicUrls(uploadedImageUrls);
+      throw error;
+    }
 
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -344,7 +364,7 @@ const getProductById = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const { name, price, description, stock, categoryId, removeImage, keepImages } = req.body;
-    const uploadedImageUrls = getUploadedProductImageUrls(req);
+    const uploadedImageFiles = getUploadedProductFiles(req);
 
     const product = await Product.findById(req.params.id);
 
@@ -357,6 +377,14 @@ const updateProduct = async (req, res) => {
       return res.status(403).json({ message: "Not authorized to update this product" });
     }
 
+    let category = null;
+    if (categoryId) {
+      category = await Category.findById(categoryId);
+      if (!category) {
+        return res.status(400).json({ message: "Invalid category" });
+      }
+    }
+
     // Update fields
     product.name = name || product.name;
     product.price = price ?? product.price;
@@ -366,29 +394,49 @@ const updateProduct = async (req, res) => {
 
     const currentImageUrls = getProductImageUrls(product);
     let nextImageUrls = [...currentImageUrls];
+    let imageUrlsToDeleteAfterSave = [];
 
     // 1. Handle keepImages if provided (filtering out removed ones)
     if (keepImages) {
-      const imagesToKeep = Array.isArray(keepImages) ? keepImages : [keepImages];
-      const imagesToRemove = currentImageUrls.filter(img => !imagesToKeep.includes(img));
-      removeProductImageFiles(imagesToRemove);
-      nextImageUrls = imagesToKeep;
+      nextImageUrls = keepCurrentProductImages(currentImageUrls, keepImages);
+      imageUrlsToDeleteAfterSave = currentImageUrls.filter((imageUrl) => !nextImageUrls.includes(imageUrl));
     } else if (removeImage === "true" || removeImage === true) {
       // 2. Handle legacy removeImage (remove everything)
-      removeProductImageFiles(currentImageUrls);
+      imageUrlsToDeleteAfterSave = [...currentImageUrls];
       nextImageUrls = [];
     }
 
-    // 3. Add new uploaded images
-    if (uploadedImageUrls.length) {
-      nextImageUrls = [...nextImageUrls, ...uploadedImageUrls];
+    const categoryForUpload = category || await Category.findById(product.categoryId).select("name");
+    const uploadedImageUrls = await uploadProductImagesToStorage(
+      uploadedImageFiles,
+      categoryForUpload?.name
+    );
+
+    const {
+      imageUrls: normalizedNextImageUrls,
+      keptUploadedImageUrls,
+      trimmedUploadedImageUrls,
+    } = getTrimmedNewImageUrls(
+      [...nextImageUrls, ...uploadedImageUrls],
+      uploadedImageUrls
+    );
+
+    if (trimmedUploadedImageUrls.length) {
+      await deleteObjectsByPublicUrls(trimmedUploadedImageUrls);
     }
 
-    syncProductImageFields(product, nextImageUrls);
+    syncProductImageFields(product, normalizedNextImageUrls);
 
-    const updatedProduct = await product.save();
+    try {
+      const updatedProduct = await product.save();
 
-    res.json(withProductImageGallery(updatedProduct));
+      await deleteObjectsByPublicUrls(imageUrlsToDeleteAfterSave);
+
+      res.json(withProductImageGallery(updatedProduct));
+    } catch (error) {
+      await deleteObjectsByPublicUrls(keptUploadedImageUrls);
+      throw error;
+    }
 
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -410,7 +458,7 @@ const deleteProduct = async (req, res) => {
       return res.status(403).json({ message: "Not authorized to delete this product" });
     }
 
-    removeProductImageFiles(getProductImageUrls(product));
+    await deleteObjectsByPublicUrls(getProductImageUrls(product));
     await product.deleteOne();
 
     res.json({ message: "Product deleted successfully" });

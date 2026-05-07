@@ -18,9 +18,11 @@ const { protect, authorizeRoles } = require("../middleware/authMiddleware");
 const { uploadProductImages } = require("../middleware/uploadMiddleware");
 const { requireObjectIdParam, validateCreateProduct } = require("../middleware/validationMiddleware");
 
+const MAX_PRODUCT_IMAGES = 6;
+
 const productGalleryUpload = uploadProductImages.fields([
   { name: "image", maxCount: 1 },
-  { name: "images", maxCount: 4 }
+  { name: "images", maxCount: MAX_PRODUCT_IMAGES }
 ]);
 
 // Public route

@@ -69,6 +69,10 @@ const userSchema = new mongoose.Schema({
     enum: ["none", "pending", "approved", "rejected"],
     default: "none"
   },
+  isBanned: {
+    type: Boolean,
+    default: false
+  },
   shopName: {
     type: String // only for vendor
   },
@@ -97,7 +101,9 @@ const userSchema = new mongoose.Schema({
   },
   profileCardBackgroundUrl: {
     type: String
-  }
+  },
+  passwordResetCodeHash: String,
+  passwordResetCodeExpire: Date
 }, {
   timestamps: true
 });

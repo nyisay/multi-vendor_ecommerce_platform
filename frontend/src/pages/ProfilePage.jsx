@@ -5,15 +5,30 @@ import { getImageUrl } from "../services/api";
 import { PAYMENT_METHOD_OPTIONS } from "../services/checkout";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
+import PasswordField from "../components/ui/PasswordField";
 import Select from "../components/ui/Select";
 import Badge from "../components/ui/Badge";
 import { SectionHeading } from "../components/ui/Section";
 import { Card, CardBody } from "../components/ui/Card";
+import {
+  LockIcon,
+  MailIcon,
+  MapPinIcon,
+  PhoneIcon,
+  ShieldIcon,
+  UserIcon,
+} from "../components/ui/IconGlyphs";
+import {
+  getPasswordValidationError,
+  PASSWORD_REQUIREMENTS_TEXT,
+} from "../utils/authValidation";
 
 export default function ProfilePage() {
   const { user, updateProfile, refreshProfile } = useAuth();
   const { showToast } = useToast();
-  const [password, setPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [profileImageFile, setProfileImageFile] = useState(null);
   const [profileBackgroundFile, setProfileBackgroundFile] = useState(null);
   const [removeProfileImage, setRemoveProfileImage] = useState(false);
@@ -37,6 +52,26 @@ export default function ProfilePage() {
 
   const onSubmit = async (event) => {
     event.preventDefault();
+
+    const isUpdatingPassword = Boolean(currentPassword || newPassword || confirmNewPassword);
+    if (isUpdatingPassword) {
+      if (!currentPassword) {
+        showToast("Current password is required to set a new password.", "error");
+        return;
+      }
+
+      const passwordError = getPasswordValidationError(newPassword);
+      if (passwordError) {
+        showToast(passwordError, "error");
+        return;
+      }
+
+      if (newPassword !== confirmNewPassword) {
+        showToast("New password and confirm password do not match.", "error");
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const formData = new FormData(event.currentTarget);
@@ -75,8 +110,10 @@ export default function ProfilePage() {
       if (user?.role === "vendor") {
         payload.append("shopName", formData.get("shopName") || "");
       }
-      if (password) {
-        payload.append("password", password);
+      if (isUpdatingPassword) {
+        payload.append("currentPassword", currentPassword);
+        payload.append("newPassword", newPassword);
+        payload.append("confirmNewPassword", confirmNewPassword);
       }
       if (profileImageFile) {
         payload.append("profileImage", profileImageFile);
@@ -97,7 +134,9 @@ export default function ProfilePage() {
       setTimeout(() => {
         showToast("Profile updated", "success");
       }, 1500);
-      setPassword("");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
       setProfileImageFile(null);
       setProfileBackgroundFile(null);
       setRemoveProfileImage(false);
@@ -260,9 +299,6 @@ export default function ProfilePage() {
                       <p className="truncate text-sm font-medium text-amber-50/80">
                         {user?.email || ""}
                       </p>
-                      <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-amber-200/60">
-                        Luxury profile preview
-                      </p>
                     </div>
                   </div>
 
@@ -320,6 +356,7 @@ export default function ProfilePage() {
                     placeholder="Name"
                     required
                     autoComplete="name"
+                    leadingIcon={<UserIcon className="h-4.5 w-4.5" />}
                   />
                 </div>
                 <div className="space-y-2">
@@ -329,7 +366,12 @@ export default function ProfilePage() {
                   >
                     Email
                   </label>
-                  <Input id="email" value={user?.email || ""} disabled />
+                  <Input
+                    id="email"
+                    value={user?.email || ""}
+                    disabled
+                    leadingIcon={<MailIcon className="h-4.5 w-4.5" />}
+                  />
                 </div>
               </div>
 
@@ -347,6 +389,7 @@ export default function ProfilePage() {
                     defaultValue={user?.phone || ""}
                     placeholder="Phone"
                     autoComplete="tel"
+                    leadingIcon={<PhoneIcon className="h-4.5 w-4.5" />}
                   />
                 </div>
                 <div className="space-y-2">
@@ -362,6 +405,7 @@ export default function ProfilePage() {
                     defaultValue={user?.address || ""}
                     placeholder="Address"
                     autoComplete="street-address"
+                    leadingIcon={<MapPinIcon className="h-4.5 w-4.5" />}
                   />
                 </div>
               </div>
@@ -380,6 +424,7 @@ export default function ProfilePage() {
                     defaultValue={user?.shopName || ""}
                     placeholder="Shop name"
                     className="mt-2"
+                    leadingIcon={<ShieldIcon className="h-4.5 w-4.5" />}
                   />
                 </div>
               )}
@@ -413,6 +458,7 @@ export default function ProfilePage() {
                     name="defaultShippingFullName"
                     defaultValue={user?.defaultShippingAddress?.fullName || user?.name || ""}
                     placeholder="Recipient name"
+                    leadingIcon={<UserIcon className="h-4.5 w-4.5" />}
                   />
                 </div>
                 <div className="space-y-2">
@@ -427,6 +473,7 @@ export default function ProfilePage() {
                     name="defaultShippingPhone"
                     defaultValue={user?.defaultShippingAddress?.phone || user?.phone || ""}
                     placeholder="Shipping phone"
+                    leadingIcon={<PhoneIcon className="h-4.5 w-4.5" />}
                   />
                 </div>
               </div>
@@ -446,6 +493,7 @@ export default function ProfilePage() {
                       user?.defaultShippingAddress?.addressLine1 || user?.address || ""
                     }
                     placeholder="Street address"
+                    leadingIcon={<MapPinIcon className="h-4.5 w-4.5" />}
                   />
                 </div>
                 <div className="space-y-2">
@@ -460,6 +508,7 @@ export default function ProfilePage() {
                     name="defaultShippingAddressLine2"
                     defaultValue={user?.defaultShippingAddress?.addressLine2 || ""}
                     placeholder="Apartment, suite, building"
+                    leadingIcon={<MapPinIcon className="h-4.5 w-4.5" />}
                   />
                 </div>
               </div>
@@ -551,34 +600,77 @@ export default function ProfilePage() {
                 <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-amber-700">
                   Security
                 </p>
-                <h2 className="mt-2 text-2xl font-black tracking-tight text-[#1c1917]">
-                  Security And Save
-                </h2>
+                <div className="mt-2 flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#1c1917] text-white shadow-[0_18px_35px_-22px_rgba(28,25,23,0.65)]">
+                    <ShieldIcon className="h-5 w-5" />
+                  </div>
+                  <h2 className="text-2xl font-black tracking-tight text-[#1c1917]">
+                    Security And Save
+                  </h2>
+                </div>
                 <p className="mt-2 text-sm leading-6 text-stone-600">
                   Finalize every update in one place while keeping access details protected.
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <label
-                  className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500"
-                  htmlFor="newPassword"
-                >
-                  New password (optional)
-                </label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  placeholder="••••••••"
-                  autoComplete="new-password"
-                />
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-2">
+                  <label
+                    className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500"
+                    htmlFor="currentPassword"
+                  >
+                    Current password
+                  </label>
+                  <PasswordField
+                    id="currentPassword"
+                    value={currentPassword}
+                    onChange={(event) => setCurrentPassword(event.target.value)}
+                    placeholder="Enter current password"
+                    autoComplete="current-password"
+                    leadingIcon={<LockIcon className="h-4.5 w-4.5" />}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label
+                    className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500"
+                    htmlFor="newPassword"
+                  >
+                    New password
+                  </label>
+                  <PasswordField
+                    id="newPassword"
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
+                    placeholder="AungSoe@2026"
+                    autoComplete="new-password"
+                    leadingIcon={<LockIcon className="h-4.5 w-4.5" />}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label
+                    className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500"
+                    htmlFor="confirmNewPassword"
+                  >
+                    Confirm new password
+                  </label>
+                  <PasswordField
+                    id="confirmNewPassword"
+                    value={confirmNewPassword}
+                    onChange={(event) => setConfirmNewPassword(event.target.value)}
+                    placeholder="Repeat new password"
+                    autoComplete="new-password"
+                    leadingIcon={<LockIcon className="h-4.5 w-4.5" />}
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-[#eadfcf] bg-[#fffaf1] px-4 py-3 text-sm text-stone-600">
+                {PASSWORD_REQUIREMENTS_TEXT}
               </div>
 
               <div className="flex flex-col gap-3 rounded-[1.4rem] border border-[#eadfcf] bg-[linear-gradient(180deg,_#fff8ee_0%,_#fffdf8_100%)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-stone-600">
-                  This layout uses a luxury visual direction with a consistent boutique-style finish.
+                  Changing your password now requires your current password plus a confirmed new password.
                 </p>
                 <Button
                   type="submit"

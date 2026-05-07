@@ -16,6 +16,8 @@ import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import OrdersPage from "./pages/OrdersPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -54,6 +56,9 @@ function App() {
       <Route path="/" element={<AppLayout />}>
         <Route index element={<HomePage />} />
         <Route path="login" element={<LoginPage />} />
+        <Route path="forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="reset-password" element={<ResetPasswordPage />} />
+        <Route path="resetpassword/:token" element={<Navigate to="/reset-password" replace />} />
         <Route path="register" element={<RegisterPage />} />
         <Route path="products" element={<ProductsPage />} />
         <Route path="products/:id" element={<ProductDetailsPage />} />

@@ -14,13 +14,16 @@ const MENU_SURFACES = [
   "border-orange-200 bg-[linear-gradient(180deg,_#fff7ed_0%,_#ffffff_100%)] text-orange-950",
 ];
 
-function NavItem({ to, children }) {
+function NavItem({ to, children, activePathPrefix = "" }) {
+  const location = useLocation();
+  const isPrefixActive = activePathPrefix && location.pathname.startsWith(activePathPrefix);
+
   return (
     <NavLink
       to={to}
       className={({ isActive }) =>
         `rounded-full px-4 py-2.5 text-sm font-semibold tracking-tight transition ${
-          isActive
+          isActive || isPrefixActive
             ? "!bg-amber-200 text-slate-950 shadow-[0_14px_30px_-18px_rgba(251,191,36,0.85)]"
             : "!text-white hover:bg-white/10 hover:text-green-500"
         }`
@@ -291,7 +294,11 @@ export default function AppLayout() {
                 {user?.role === "customer" && <NavItem to="/cart">Cart</NavItem>}
                 {user?.role === "customer" && <NavItem to="/wishlist">Wishlist</NavItem>}
                 {user?.role === "customer" && <NavItem to="/orders">Orders</NavItem>}
-                {user?.role === "vendor" && <NavItem to="/vendor/dashboard">Vendor</NavItem>}
+                {user?.role === "vendor" && (
+                  <NavItem to="/vendor/dashboard" activePathPrefix="/vendor/">
+                    Vendor
+                  </NavItem>
+                )}
                 {user?.role === "admin" && <NavItem to="/admin/dashboard">Admin</NavItem>}
               </nav>
 

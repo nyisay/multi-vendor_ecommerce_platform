@@ -16,6 +16,10 @@ const protect = async (req, res, next) => {
         return next(new AppError("User not found", 401, "UNAUTHORIZED"));
       }
 
+      if (user.isBanned) {
+        return next(new AppError("Your account has been banned", 403, "ACCOUNT_BANNED"));
+      }
+
       req.user = user;
 
       next();

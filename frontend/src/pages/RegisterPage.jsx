@@ -3,8 +3,22 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
+import PasswordField from "../components/ui/PasswordField";
 import Select from "../components/ui/Select";
 import { Card, CardBody } from "../components/ui/Card";
+import {
+  MailIcon,
+  MapPinIcon,
+  PhoneIcon,
+  ShieldIcon,
+  SparklesIcon,
+  UserIcon,
+} from "../components/ui/IconGlyphs";
+import {
+  getPasswordValidationError,
+  isValidEmail,
+  PASSWORD_REQUIREMENTS_TEXT,
+} from "../utils/authValidation";
 
 const ROLE_SURFACES = {
   customer: "bg-sky-50 text-sky-950 ring-sky-200",
@@ -19,6 +33,7 @@ export default function RegisterPage() {
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
     role: "customer",
     shopName: "",
     phone: "",
@@ -37,6 +52,23 @@ export default function RegisterPage() {
     event.preventDefault();
     setError("");
     setSuccessMessage("");
+
+    if (!isValidEmail(form.email)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+
+    const passwordError = getPasswordValidationError(form.password);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+
+    if (form.password !== form.confirmPassword) {
+      setError("Password and confirm password do not match.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -65,6 +97,10 @@ export default function RegisterPage() {
 
           <div className="relative space-y-6">
             <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-white/75 backdrop-blur">
+                <SparklesIcon className="h-4 w-4" />
+                Account creation
+              </div>
               <p className="text-[11px] font-bold uppercase tracking-[0.26em] text-white/55">
                 Join the marketplace
               </p>
@@ -187,6 +223,7 @@ export default function RegisterPage() {
                   required
                   autoComplete="name"
                   className="border-slate-200 bg-slate-50"
+                  leadingIcon={<UserIcon className="h-4.5 w-4.5" />}
                 />
               </div>
 
@@ -201,12 +238,13 @@ export default function RegisterPage() {
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder="olivia.nguyen@example.com"
                   value={form.email}
                   onChange={onChange}
                   required
                   autoComplete="email"
                   className="border-slate-200 bg-slate-50"
+                  leadingIcon={<MailIcon className="h-4.5 w-4.5" />}
                 />
               </div>
 
@@ -217,16 +255,39 @@ export default function RegisterPage() {
                 >
                   Password
                 </label>
-                <Input
+                <PasswordField
                   id="password"
                   name="password"
-                  type="password"
-                  placeholder="Create a password"
+                  placeholder="AungSoe@2026"
                   value={form.password}
                   onChange={onChange}
                   required
                   autoComplete="new-password"
                   className="border-slate-200 bg-slate-50"
+                  leadingIcon={<ShieldIcon className="h-4.5 w-4.5" />}
+                />
+                <p className="text-xs font-semibold text-slate-500">
+                  {PASSWORD_REQUIREMENTS_TEXT}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500"
+                  htmlFor="confirmPassword"
+                >
+                  Confirm password
+                </label>
+                <PasswordField
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  placeholder="Repeat your password"
+                  value={form.confirmPassword}
+                  onChange={onChange}
+                  required
+                  autoComplete="new-password"
+                  className="border-slate-200 bg-slate-50"
+                  leadingIcon={<ShieldIcon className="h-4.5 w-4.5" />}
                 />
               </div>
 
@@ -264,6 +325,7 @@ export default function RegisterPage() {
                     value={form.shopName}
                     onChange={onChange}
                     className="border-slate-200 bg-slate-50"
+                    leadingIcon={<SparklesIcon className="h-4.5 w-4.5" />}
                   />
                 </div>
               )}
@@ -285,6 +347,7 @@ export default function RegisterPage() {
                     onChange={onChange}
                     autoComplete="tel"
                     className="border-slate-200 bg-slate-50"
+                    leadingIcon={<PhoneIcon className="h-4.5 w-4.5" />}
                   />
                 </div>
                 <div className="space-y-2">
@@ -303,6 +366,7 @@ export default function RegisterPage() {
                     onChange={onChange}
                     autoComplete="street-address"
                     className="border-slate-200 bg-slate-50"
+                    leadingIcon={<MapPinIcon className="h-4.5 w-4.5" />}
                   />
                 </div>
               </div>

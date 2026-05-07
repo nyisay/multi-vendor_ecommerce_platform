@@ -11,6 +11,7 @@ function toStoredUser(profile) {
     email: profile.email,
     role: profile.role,
     vendorStatus: profile.vendorStatus,
+    isBanned: profile.isBanned,
     shopName: profile.shopName,
     phone: profile.phone,
     address: profile.address,
