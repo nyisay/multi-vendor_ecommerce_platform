@@ -104,7 +104,7 @@ export default function RegisterPage() {
               <p className="text-[11px] font-bold uppercase tracking-[0.26em] text-white/55">
                 Join the marketplace
               </p>
-              <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] text-white sm:text-5xl">
+              <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] !text-white sm:text-5xl">
                 Create an account that fits how you shop or sell.
               </h1>
               <p className="mt-3 max-w-xl text-sm leading-7 text-slate-300 sm:text-base">
@@ -161,7 +161,7 @@ export default function RegisterPage() {
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 to="/login"
-                className="rounded-full bg-amber-300 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-200"
+                className="rounded-full bg-amber-300 px-5 py-3 text-sm font-semibold !text-slate-950 transition hover:bg-amber-200"
               >
                 Already have an account?
               </Link>

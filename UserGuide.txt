@@ -1,0 +1,1002 @@
+# Multi-Vendor Ecommerce Marketplace User Guide
+
+## 1. Introduction
+
+The **Multi-Vendor Ecommerce Marketplace** is a full-stack web application where multiple sellers can manage products in one shared marketplace and customers can browse, save, purchase, and track orders from the same storefront.
+
+The system supports three roles:
+
+- **Customer**: browses products, saves wishlist items, adds items to cart, places orders, and manages profile details
+- **Vendor**: lists products, uploads product images, manages stock, and updates fulfillment status for their own order items
+- **Admin**: monitors the marketplace, approves vendors, manages users, categories, products, and orders, and reviews dashboard analytics
+
+This guide explains how to install, run, and use the project from an end-user and operator perspective.
+
+---
+
+## 2. Main Features
+
+### Customer Features
+
+- Register and sign in
+- Browse all products from the catalog
+- Search products by keyword
+- Filter by category, vendor, price, rating, and stock status
+- Sort products by newest, price, rating, and name
+- View product details
+- Add or update one review per product
+- React to other customer reviews with like/dislike
+- Save and remove wishlist items
+- Add items to cart
+- Complete checkout with shipping information
+- Choose delivery method and payment method
+- Save checkout defaults to the user profile
+- View order history
+- Cancel eligible orders
+- Update profile information, shipping defaults, payment defaults, password, and profile images
+- Reset password using a 6-digit verification code sent by email
+
+### Vendor Features
+
+- Register as a vendor applicant
+- Wait for admin approval before logging in
+- Access vendor dashboard
+- Create products
+- Upload up to multiple product images
+- Edit product information
+- Delete products
+- View vendor-only order list
+- Update vendor fulfillment status to:
+  - `processing`
+  - `shipped`
+  - `delivered`
+  - `cancelled`
+- View vendor sales summary
+- Update vendor profile and store details
+
+### Admin Features
+
+- Access admin dashboard
+- View strategic and marketing dashboard pages
+- View all users
+- Ban and unban non-admin users
+- Review vendor applications
+- Approve, reject, or return vendors to pending status
+- View and manage all products
+- Create categories
+- View and manage all orders
+- Update order status and payment status
+- Review overall marketplace analytics such as orders, revenue, users, and products
+
+---
+
+## 3. Project Structure
+
+```text
+multi-vendor-ecommerce/
+├─ backend/
+│  ├─ controllers/
+│  ├─ middleware/
+│  ├─ models/
+│  ├─ routes/
+│  ├─ scripts/
+│  ├─ tests/
+│  ├─ utils/
+│  ├─ package.json
+│  └─ server.js
+├─ frontend/
+│  ├─ src/
+│  │  ├─ components/
+│  │  ├─ context/
+│  │  ├─ pages/
+│  │  ├─ services/
+│  │  └─ utils/
+│  ├─ package.json
+│  └─ vite.config.js
+├─ README.md
+└─ USER_GUIDE.md
+```
+
+---
+
+## 4. Technology Stack
+
+### Frontend
+
+- React
+- React Router
+- Vite
+- Tailwind CSS
+- Axios
+
+### Backend
+
+- Node.js
+- Express
+- MongoDB with Mongoose
+- JWT authentication
+- Multer
+- Supabase Storage
+- Nodemailer
+- Jest and Supertest
+
+---
+
+## 5. System Requirements
+
+Before running the project, make sure you have:
+
+- **Node.js** installed
+- **npm** installed
+- A **MongoDB** database available
+- A **Supabase** project and storage bucket for image uploads
+- An **email account / SMTP configuration** for password reset emails
+
+Recommended:
+
+- Node.js 18 or newer
+- A modern browser such as Chrome, Edge, or Firefox
+
+---
+
+## 6. Environment Configuration
+
+Create a `.env` file inside the `backend` folder.
+
+### Required backend variables
+
+```env
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+FRONTEND_ORIGIN=http://localhost:5173
+PORT=5000
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+SUPABASE_STORAGE_BUCKET=Multi-Vendor Ecommerce Platform
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=465
+EMAIL_USER=your_email@example.com
+EMAIL_PASS=your_email_password_or_app_password
+FROM_NAME=MultiVendor
+FROM_EMAIL=your_email@example.com
+```
+
+### Notes
+
+- `MONGO_URI` is required for the backend to connect to MongoDB.
+- `JWT_SECRET` is required for login and protected routes.
+- `FRONTEND_ORIGIN` controls allowed frontend origins in CORS.
+- `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are required for product and profile image upload support.
+- `SUPABASE_STORAGE_BUCKET` defaults to `Multi-Vendor Ecommerce Platform` if omitted.
+- Password reset email only works if email settings are valid.
+- `EMAIL_USER` / `EMAIL_PASS` may also be provided as `GMAIL_USER` / `GMAIL_PASS`.
+
+### Optional frontend variable
+
+The frontend already proxies `/api` to `http://localhost:5000` in development, so a frontend `.env` is not strictly required for local use.
+
+If you want the frontend to call a different backend directly, create `frontend\.env`:
+
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
+---
+
+## 7. Installation
+
+## Backend Setup
+
+Open a terminal in the backend folder:
+
+```powershell
+cd c:\Users\ASUS\Desktop\mv\multi-vendor-ecommerce\backend
+npm install
+```
+
+## Frontend Setup
+
+Open another terminal in the frontend folder:
+
+```powershell
+cd c:\Users\ASUS\Desktop\mv\multi-vendor-ecommerce\frontend
+npm install
+```
+
+---
+
+## 8. Running the Project
+
+## Start the Backend
+
+```powershell
+cd c:\Users\ASUS\Desktop\mv\multi-vendor-ecommerce\backend
+npm start
+```
+
+The backend runs on:
+
+- `http://localhost:5000`
+
+## Start the Frontend
+
+```powershell
+cd c:\Users\ASUS\Desktop\mv\multi-vendor-ecommerce\frontend
+npm run dev
+```
+
+The frontend runs on:
+
+- `http://localhost:5173`
+
+---
+
+## 9. First-Time Access
+
+After both servers are running:
+
+1. Open `http://localhost:5173`
+2. Browse the homepage or product catalog
+3. Register a new customer account or vendor account
+4. Sign in
+5. Use role-based pages after login
+
+### Important role notes
+
+- **Customers** can register and then log in immediately.
+- **Vendors** can register, but **cannot log in until an admin approves the vendor account**.
+- **Admins cannot self-register from the public registration form**. An admin account must already exist in the database.
+
+---
+
+## 10. Navigation Overview
+
+### Public Pages
+
+- Home
+- Products
+- Product Details
+- About
+- Terms
+- Privacy
+- Accessibility
+- Login
+- Register
+- Forgot Password
+- Reset Password
+
+### Customer-Protected Pages
+
+- Profile
+- Cart
+- Checkout
+- Orders
+- Wishlist
+
+### Vendor-Protected Pages
+
+- Vendor Dashboard
+- Vendor Products
+- Vendor Operational Dashboard
+- Vendor Orders
+
+### Admin-Protected Pages
+
+- Admin Dashboard
+- Admin Strategic Dashboard
+- Admin Marketing Dashboard
+- Admin Users
+- Admin Vendors
+- Admin Products
+- Admin Categories
+- Admin Orders
+
+---
+
+## 11. Customer Guide
+
+## 11.1 Register as a Customer
+
+1. Open the **Register** page.
+2. Enter:
+   - full name
+   - email
+   - password
+   - confirm password
+3. Keep account type as **Customer**.
+4. Optionally add phone and address.
+5. Submit the form.
+6. After success, go to **Login**.
+
+### Registration validation
+
+- Name must be at least 2 characters
+- Email must be valid
+- Password must satisfy the app password rules
+- Confirm password must match
+
+---
+
+## 11.2 Sign In
+
+1. Open the **Login** page.
+2. Enter email and password.
+3. Submit the form.
+4. After sign-in, the app redirects based on role:
+   - customer -> product browsing flow
+   - vendor -> vendor dashboard
+   - admin -> admin dashboard
+
+---
+
+## 11.3 Browse Products
+
+From the **Products** page, customers can:
+
+- Search by keyword
+- Filter by category
+- Filter by vendor
+- Set minimum and maximum price
+- Filter by minimum rating
+- Filter by stock availability
+- Sort by:
+  - newest
+  - price low to high
+  - price high to low
+  - highest rated
+  - lowest rated
+  - name A to Z
+  - name Z to A
+
+The catalog also supports pagination.
+
+---
+
+## 11.4 View Product Details
+
+On a product details page, customers can:
+
+- View product name, price, stock, and description
+- View product images
+- See vendor and category information
+- Read customer reviews
+- Add the product to cart
+- Save or remove the product from wishlist
+
+---
+
+## 11.5 Write Reviews
+
+Customers can submit **one review per product**.
+
+To review a product:
+
+1. Open the product details page
+2. Select a rating from 1 to 5
+3. Enter a comment
+4. Submit the review
+
+Notes:
+
+- Posting again updates the existing review
+- Customers can like or dislike other customers' reviews
+- Customers cannot react to their own reviews
+
+---
+
+## 11.6 Wishlist
+
+The wishlist allows customers to save products for later.
+
+### Add to wishlist
+
+- Use **Save to wishlist** from the products page or product details page
+
+### Remove from wishlist
+
+- Open the wishlist page and remove the item
+- Or toggle the wishlist button from the catalog/product page
+
+---
+
+## 11.7 Cart
+
+Customers can add items to cart from the catalog or product detail page.
+
+### Cart actions
+
+- Add product
+- Increase or decrease quantity
+- Remove product
+- Continue to checkout
+
+If stock is zero, the app blocks new cart additions for that product.
+
+---
+
+## 11.8 Checkout
+
+Checkout is only available to customers.
+
+### Required shipping fields
+
+- Full name
+- Phone
+- Address line 1
+- City
+- State
+- Postal code
+- Country
+
+### Optional fields
+
+- Address line 2
+- Order notes
+
+### Delivery methods
+
+- **Standard**: shipping fee is **$6.99**
+- **Express**: shipping fee is **$14.99**
+
+### Payment methods
+
+- `cod`
+- `card`
+- `bank_transfer`
+
+### Payment behavior
+
+- **Card** orders are simulated and are marked as **paid immediately**
+- **Cash on delivery** and **bank transfer** remain unpaid until processed later
+
+### Save checkout defaults
+
+Customers can tick the option to save:
+
+- shipping profile details
+- phone
+- address
+- default payment method
+
+These values are then reused later from the profile.
+
+---
+
+## 11.9 Orders
+
+After a successful checkout, the customer can open **Orders** to view order history.
+
+Each order includes:
+
+- purchased items
+- quantities
+- price at purchase
+- shipping details
+- delivery method
+- payment method
+- payment status
+- order status
+
+### Cancel order
+
+Customers can cancel an order only when it is still in an early state.
+
+Typical supported customer cancellation states:
+
+- `pending`
+- `paid`
+
+Orders cannot be cancelled after later processing stages or after refund completion.
+
+---
+
+## 11.10 Profile Management
+
+Customers can update their profile page with:
+
+- name
+- phone
+- address
+- default shipping address
+- default payment method
+- password
+- profile image
+- profile card background
+- profile theme
+
+### Password change rules
+
+To change password from profile:
+
+1. Enter current password
+2. Enter a new password
+3. Confirm the new password
+
+The app checks that:
+
+- current password is correct
+- new password meets password rules
+- new password is different from the old password
+- confirmation matches
+
+---
+
+## 11.11 Forgot Password
+
+If a user forgets their password:
+
+1. Open **Forgot Password**
+2. Enter the account email
+3. Submit the form
+4. The backend sends a **6-digit verification code** by email
+5. Open **Reset Password**
+6. Enter:
+   - email
+   - 6-digit code
+   - new password
+   - confirm password
+7. Submit the reset form
+8. Sign in again using the new password
+
+### Important
+
+Password reset only works when email configuration is correctly set in backend environment variables.
+
+---
+
+## 12. Vendor Guide
+
+## 12.1 Register as a Vendor
+
+1. Open **Register**
+2. Select account type **Vendor**
+3. Fill in:
+   - full name
+   - email
+   - password
+   - confirm password
+   - shop name
+   - phone
+   - address
+4. Submit the form
+
+After registration:
+
+- the account is created with vendor status `pending`
+- the vendor must wait for admin approval
+- login is blocked until the vendor is approved
+
+---
+
+## 12.2 Vendor Approval Workflow
+
+Vendor status values include:
+
+- `pending`
+- `approved`
+- `rejected`
+
+If a vendor tries to log in before approval, the backend returns an error saying the vendor account is pending admin approval.
+
+---
+
+## 12.3 Vendor Dashboard
+
+After approval and login, the vendor is redirected to vendor pages where they can:
+
+- review sales or operational information
+- manage products
+- review vendor order items
+
+---
+
+## 12.4 Manage Products
+
+From **Vendor Products**, vendors can:
+
+- create products
+- upload product images
+- edit product data
+- delete products
+
+### Product creation fields
+
+- product name
+- price
+- description
+- stock
+- category
+
+### Product validation
+
+- Name is required
+- Category must be valid
+- Price must be a non-negative number
+- Stock must be a non-negative integer
+
+### Product images
+
+- Image uploads are stored in Supabase Storage
+- If Supabase is not configured properly, image upload will fail
+- The backend supports a product image gallery rather than only one image
+
+---
+
+## 12.5 Vendor Orders
+
+From **Vendor Orders**, vendors can:
+
+- see orders containing their products
+- update fulfillment status for their own order items
+
+### Allowed vendor fulfillment updates
+
+- `processing`
+- `shipped`
+- `delivered`
+- `cancelled`
+
+The vendor only manages the part of the order linked to that vendor's own items.
+
+---
+
+## 12.6 Vendor Profile
+
+Vendors can update:
+
+- personal details
+- shop name
+- shipping defaults
+- payment defaults
+- password
+- profile images and background
+
+---
+
+## 13. Admin Guide
+
+## 13.1 Admin Access
+
+Admin routes are protected and available only to users whose role is already stored as `admin` in the database.
+
+### Important
+
+- Public registration cannot create admin users
+- Admin accounts must be created separately in the database or by project setup logic outside the public UI
+
+---
+
+## 13.2 Admin Dashboard Areas
+
+Admin pages include:
+
+- Dashboard
+- Strategic Dashboard
+- Marketing Dashboard
+- Users
+- Vendors
+- Products
+- Categories
+- Orders
+
+These pages provide a marketplace-wide view rather than a single-vendor view.
+
+---
+
+## 13.3 Manage Users
+
+From **Admin Users**, admins can:
+
+- list all users
+- ban users
+- unban users
+
+### Ban restrictions
+
+- An admin cannot ban their own account
+- Admin accounts cannot be banned by this flow
+
+---
+
+## 13.4 Manage Vendors
+
+From **Admin Vendors**, admins can:
+
+- view vendor accounts
+- filter vendors by status
+- approve pending vendors
+- reject vendor applications
+- set vendor status back to pending if needed
+
+This is the required step before a vendor can log in.
+
+---
+
+## 13.5 Manage Categories
+
+From **Admin Categories**, admins can create and manage product categories used by vendors when creating products.
+
+---
+
+## 13.6 Manage Products
+
+From **Admin Products**, admins can:
+
+- view all marketplace products
+- update product details
+- delete products if needed
+
+Unlike vendors, admins can manage products across the whole marketplace.
+
+---
+
+## 13.7 Manage Orders
+
+From **Admin Orders**, admins can:
+
+- review all orders
+- update order status
+- update payment status
+
+### Valid order statuses
+
+- `pending`
+- `processing`
+- `paid`
+- `shipped`
+- `delivered`
+- `cancelled`
+
+### Valid payment statuses
+
+- `unpaid`
+- `paid`
+- `failed`
+- `refunded`
+
+If the admin cancels an order, item fulfillment statuses are also updated accordingly.
+
+---
+
+## 13.8 Admin Analytics
+
+The admin analytics API returns overall marketplace figures such as:
+
+- total orders
+- total revenue
+- total users
+- total products
+
+Revenue is based on orders in successful sales states such as paid, shipped, or delivered.
+
+---
+
+## 14. Authentication and Authorization Rules
+
+The application uses JWT-based authentication.
+
+### Protected behavior
+
+- A token is stored in browser local storage after login
+- Protected routes require a valid token
+- Role-based route guards restrict access by user role
+- The frontend keeps the user session in local storage
+- If the saved token becomes invalid, the app clears the session
+
+### Role restrictions
+
+- Customer-only pages: cart, checkout, wishlist, orders
+- Vendor-only pages: vendor dashboard, vendor products, vendor orders
+- Admin-only pages: admin dashboards and management pages
+
+---
+
+## 15. Image Upload Behavior
+
+The project supports image upload for:
+
+- product images
+- profile images
+- profile card backgrounds
+
+### Storage provider
+
+- Supabase Storage
+
+### Requirements
+
+To use uploads, the backend must have:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- optional `SUPABASE_STORAGE_BUCKET`
+
+Without valid Supabase configuration:
+
+- vendor product image upload fails
+- profile image upload fails
+
+---
+
+## 16. Password and Reset Rules
+
+The application validates passwords on:
+
+- registration
+- password reset
+- profile password update
+
+The app also validates that a reset code is:
+
+- exactly 6 digits
+
+If email delivery fails, the password reset flow cannot be completed.
+
+---
+
+## 17. Testing and Verification
+
+## Backend Tests
+
+```powershell
+cd c:\Users\ASUS\Desktop\mv\multi-vendor-ecommerce\backend
+npm test
+```
+
+## Frontend Lint
+
+```powershell
+cd c:\Users\ASUS\Desktop\mv\multi-vendor-ecommerce\frontend
+npm run lint
+```
+
+## Frontend Production Build
+
+```powershell
+cd c:\Users\ASUS\Desktop\mv\multi-vendor-ecommerce\frontend
+npm run build
+```
+
+## Backend Build Script
+
+```powershell
+cd c:\Users\ASUS\Desktop\mv\multi-vendor-ecommerce\backend
+npm run build
+```
+
+Note: the backend build script only prints a confirmation message because the backend does not require a compile step.
+
+---
+
+## 18. Common User Flows
+
+## Customer Purchase Flow
+
+1. Register as customer
+2. Log in
+3. Browse catalog
+4. Search or filter products
+5. Open a product detail page
+6. Add item to cart or wishlist
+7. Go to cart
+8. Go to checkout
+9. Enter shipping details
+10. Select delivery method
+11. Select payment method
+12. Confirm checkout
+13. View order in Orders page
+
+## Vendor Selling Flow
+
+1. Register as vendor
+2. Wait for admin approval
+3. Log in after approval
+4. Open vendor product page
+5. Add a new product
+6. Upload images
+7. Monitor orders
+8. Update fulfillment status as items move through delivery
+
+## Admin Marketplace Management Flow
+
+1. Log in with an existing admin account
+2. Open admin vendors page
+3. Approve vendor applications
+4. Review products and categories
+5. Review orders and payment states
+6. Ban abusive users if required
+7. Monitor analytics dashboards
+
+---
+
+## 19. Troubleshooting
+
+## Backend does not start
+
+Possible causes:
+
+- missing `MONGO_URI`
+- MongoDB server unavailable
+- missing `JWT_SECRET`
+- invalid `.env` formatting
+
+## Frontend cannot reach backend
+
+Check:
+
+- backend is running on port `5000`
+- frontend is running on port `5173`
+- Vite proxy is active
+- `FRONTEND_ORIGIN` allows the frontend origin
+- `VITE_API_URL` is correct if you set it
+
+## Image upload fails
+
+Check:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- bucket exists
+- storage permissions are correct
+
+## Forgot password email fails
+
+Check:
+
+- `EMAIL_HOST`
+- `EMAIL_PORT`
+- `EMAIL_USER` or `GMAIL_USER`
+- `EMAIL_PASS` or `GMAIL_PASS`
+- `FROM_EMAIL`
+- SMTP credentials or app password
+
+## Vendor cannot log in
+
+Most likely reasons:
+
+- vendor is still `pending`
+- vendor was `rejected`
+- admin approval has not been completed yet
+
+## User cannot access a page
+
+Possible causes:
+
+- not logged in
+- wrong role for the page
+- token expired or invalid
+- account banned
+
+---
+
+## 20. Current Limitations
+
+This project is a strong coursework prototype, but it still has practical limitations:
+
+- Card payment is simulated rather than connected to a live payment gateway
+- Shipping is simplified
+- Admin account creation is not available through the public UI
+- Password reset depends on SMTP email configuration
+- File upload depends on external Supabase setup
+- Production deployment settings are not fully documented in this guide
+
+---
+
+## 21. Conclusion
+
+The Multi-Vendor Ecommerce Marketplace demonstrates a complete marketplace workflow with:
+
+- role-based authentication
+- customer purchase flow
+- vendor product and order management
+- admin supervision and analytics
+- image upload support
+- password reset support
+- backend testing and frontend lint/build checks
+
+This guide can be used by:
+
+- developers setting up the project
+- instructors reviewing the system
+- testers validating marketplace flows
+- users learning how each role works inside the application

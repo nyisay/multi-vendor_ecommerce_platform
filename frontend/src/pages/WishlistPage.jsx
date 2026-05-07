@@ -360,7 +360,7 @@ export default function WishlistPage() {
             <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-amber-300/80">
               Saved collection
             </p>
-            <h1 className="mt-3 max-w-2xl text-4xl font-black tracking-[-0.04em] text-white sm:text-5xl">
+            <h1 className="mt-3 max-w-2xl text-4xl font-black tracking-[-0.04em] !text-white sm:text-5xl">
               Wishlist that feels worth revisiting.
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
